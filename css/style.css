@@ -481,19 +481,11 @@ svg {
 /* ---------- AppsWarga full screen (bridge v2, docs/miniapp-bridge.md) ----------
    While AppsWarga's header is hidden, <html> has .appswarga-fullscreen and the page runs
    edge to edge behind the status bar. Pad the top by --appswarga-safe-top (the status bar's
-   height; env() isn't reliable in Android's web view), and keep the top-right 56 px clear:
-   AppsWarga's close button sits there, so each screen's top row stops short of it. */
+   height; env() isn't reliable in Android's web view). AppsWarga's round close button sits
+   just below the status bar in the top-right corner (12 px gap + 32 px button), so each
+   screen's top row (profile + help, back + timer, …) starts below it, 12 px further down. */
 html.appswarga-fullscreen .screen {
-  padding-top: calc(var(--appswarga-safe-top, 0px) + 12px);
-}
-
-html.appswarga-fullscreen .home-head,
-html.appswarga-fullscreen .screen-board .bar {
-  padding-right: 44px; /* + the screen's 16 px gutter = 60 px from the edge */
-}
-
-html.appswarga-fullscreen .screen-game .bar {
-  padding-right: 60px; /* the game screen has no gutter of its own */
+  padding-top: calc(var(--appswarga-safe-top, 0px) + 56px);
 }
 
 .mistakes {
@@ -511,17 +503,19 @@ html.appswarga-fullscreen .screen-game .bar {
   gap: 6px;
 }
 
+/* Chances (Peluang): a full green dot per chance left; a lost one empties to an outline. */
 .dots i {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2px solid var(--line);
+  border: 2px solid var(--ok);
+  background: var(--ok);
   transition: background 0.2s, border-color 0.2s;
 }
 
-.dots i.used {
-  background: var(--bad);
-  border-color: var(--bad);
+.dots i.lost {
+  background: transparent;
+  border-color: var(--line);
 }
 
 .mistakes.bump .dots {
@@ -621,10 +615,10 @@ html.appswarga-fullscreen .screen-game .bar {
   background: var(--same);
 }
 
+/* The selected blank: yellow fill with a theme-coloured underline, no glow ring. */
 .cell.selected .ch {
   background: var(--sel);
   border-bottom-color: var(--primary);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 .cell.wrong .ch {

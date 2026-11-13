@@ -366,9 +366,10 @@ function stopTimer() {
 }
 
 function renderDots() {
-  const m = session.state.mistakes;
-  [...$('#dots').children].forEach((dot, i) => dot.classList.toggle('used', i < m));
-  $('#mistakes').setAttribute('aria-label', `Kesilapan ${m} daripada ${MAX_MISTAKES}`);
+  // Lives left = MAX_MISTAKES - mistakes; lives are lost from the right.
+  const lives = MAX_MISTAKES - session.state.mistakes;
+  [...$('#dots').children].forEach((dot, i) => dot.classList.toggle('lost', i >= lives));
+  $('#mistakes').setAttribute('aria-label', `Peluang ${lives} daripada ${MAX_MISTAKES}`);
 }
 
 function onLetter(letter) {
