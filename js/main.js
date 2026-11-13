@@ -134,10 +134,10 @@ function openProfile() {
 const fallbackType = (allowed) => (allowed.includes('awam') ? 'awam' : allowed[0]);
 
 /**
- * Inside AppsWarga, the signed-in account limits the user type: staff and students are locked
- * to Staf / Pelajar, public accounts choose Alumni or Orang Awam. A saved profile outside those
- * choices is corrected. When AppsWarga can't say (outside the app, a tester, or no token yet),
- * the player picks any type as usual.
+ * Inside AppsWarga, the signed-in account limits the user type: staff and testers are locked
+ * to Staf, students to Pelajar, public accounts choose Alumni or Orang Awam. A saved profile
+ * outside those choices is corrected. When AppsWarga can't say (outside the app, or no token
+ * yet), the player picks any type as usual.
  */
 async function syncUserTypeFromApp() {
   const allowed = await appsWargaAllowedUserTypes();

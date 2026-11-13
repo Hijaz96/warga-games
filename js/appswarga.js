@@ -90,9 +90,10 @@ function whenReady(ms = 3000) {
 
 // Game user types (js/profile-options.js) each AppsWarga account type may use.
 // Staff and students get exactly one; a "public" account can be alumni or the general public.
-// Testers aren't listed, so they choose freely.
+// AppsWarga reports any account with the tester role as "tester"; testers are staff.
 const ALLOWED_TYPES = {
   staff: ['staf'],
+  tester: ['staf'],
   student: ['pelajar'],
   public: ['alumni', 'awam'],
 };
@@ -100,7 +101,7 @@ let allowedPromise = null;
 
 /**
  * The game user types the signed-in AppsWarga user may choose from, or null when there's no
- * restriction: outside AppsWarga, not signed in, a tester, or TOKEN_UNAVAILABLE (offline, or the
+ * restriction: outside AppsWarga, not signed in, or TOKEN_UNAVAILABLE (offline, or the
  * mini-app has no token secret yet — getUserSession then returns no user type at all).
  */
 export function appsWargaAllowedUserTypes() {
