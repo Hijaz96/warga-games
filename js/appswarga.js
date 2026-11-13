@@ -62,12 +62,31 @@ async function onBridgeReady() {
   // AppsWarga's screens are light-only, so match them even when the phone is in dark mode.
   document.documentElement.dataset.theme = 'light';
   document.documentElement.classList.add('in-appswarga');
+  hideCloseButton();
   try {
     const reply = await window.appswarga.callHandler('getTheme');
     applyTheme(reply?.status === 'success' ? reply.data : themeFromCssVars());
   } catch {
     applyTheme(themeFromCssVars());
   }
+}
+
+/**
+ * Hides AppsWarga's full-screen close button (bridge v2 `setCloseButton`), so the page lays
+ * out like in a normal browser. People still leave by swiping in from the left edge or with
+ * Android's back button. It shows again each time the mini-app opens, so this runs on every
+ * load. If AppsWarga can't hide it (an older build), `aw-close-visible` on <html> makes room
+ * for it under the status bar (css/style.css).
+ */
+async function hideCloseButton() {
+  let hidden = false;
+  try {
+    const reply = await window.appswarga.callHandler('setCloseButton', { visible: false });
+    hidden = reply?.status === 'success';
+  } catch {
+    /* treat as not hidden */
+  }
+  document.documentElement.classList.toggle('aw-close-visible', !hidden);
 }
 
 export const inAppsWarga = () => Boolean(window.appswarga?.ready);
