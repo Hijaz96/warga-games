@@ -91,7 +91,29 @@ export class BoardView {
       }
       this.boardEl.append(w);
     }
+    this.fitLongestWord(state);
     this.update();
+  }
+
+  /**
+   * Words never break across lines, so cell size is capped by the widest word.
+   * Passes its width in cell units (punctuation is narrower) and its gap count to CSS.
+   */
+  fitLongestWord(state) {
+    let units = 1;
+    let gaps = 0;
+    for (const word of state.words) {
+      const u = word.reduce((sum, i) => {
+        const c = state.cells[i];
+        return sum + (c.letter || /[0-9]/.test(c.ch) ? 1 : 0.45);
+      }, 0);
+      if (u > units) {
+        units = u;
+        gaps = word.length - 1;
+      }
+    }
+    this.boardEl.style.setProperty('--word-units', String(units));
+    this.boardEl.style.setProperty('--word-gaps', String(gaps));
   }
 
   update() {
@@ -169,16 +191,9 @@ export class BoardView {
     await wait(Math.min(1600, 500 + n * 22));
   }
 
-  /** On a loss, reveals the remaining letters in the "missed" colour. */
-  async revealAll() {
-    this.state.cells.forEach((c, i) => {
-      if (c.letter && !c.shown) {
-        const { root, ch } = this.cells[i];
-        ch.textContent = c.ch;
-        root.classList.add('missed');
-      }
-    });
+  /** On a loss, shakes the board without revealing the remaining letters. */
+  async fail() {
     this.boardEl.classList.add('lose');
-    await wait(1400);
+    await wait(900);
   }
 }

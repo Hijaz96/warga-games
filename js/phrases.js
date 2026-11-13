@@ -23,6 +23,13 @@ export const PHRASES = [
   { id: 11, cat: 'uitm', text: 'Graduan UiTM berdaya saing', fact: 'UiTM melahirkan graduan dalam pelbagai bidang profesional.' },
   { id: 12, cat: 'uitm', text: 'Dewan Agung Tuanku Canselor', fact: 'Dewan utama di UiTM Shah Alam, tempat majlis konvokesyen diadakan.' },
   { id: 13, cat: 'uitm', text: 'Warga UiTM bersatu hati', fact: 'Warga UiTM merangkumi pelajar, staf dan alumni di seluruh negara.' },
+  { id: 14, cat: 'uitm', text: 'Universiti Teknologi MARA', fact: 'Nama penuh UiTM, yang digunakan sejak tahun 1999.' },
+  { id: 15, cat: 'uitm', text: 'Perpustakaan Tun Abdul Razak', fact: 'Perpustakaan utama UiTM, dikenali ramai sebagai PTAR.' },
+  { id: 16, cat: 'uitm', text: 'Hospital Al-Sultan Abdullah UiTM', fact: 'Hospital pengajar UiTM yang terletak di Puncak Alam, Selangor.' },
+  { id: 17, cat: 'uitm', text: 'Program Pra-Diploma UiTM', fact: 'Program yang membuka peluang kedua kepada pelajar untuk melanjutkan pengajian ke peringkat diploma.' },
+  { id: 18, cat: 'uitm', text: 'Kolej kediaman pelajar', fact: 'Ramai pelajar UiTM tinggal di kolej kediaman dalam kampus sepanjang pengajian.' },
+  { id: 19, cat: 'uitm', text: 'Konvokesyen meraikan graduan', fact: 'Majlis konvokesyen meraikan kejayaan ribuan graduan UiTM setiap tahun.' },
+  { id: 20, cat: 'uitm', text: 'Alumni UiTM di seluruh dunia', fact: 'Alumni UiTM berkhidmat dalam pelbagai sektor di dalam dan luar negara.' },
 
   // --- Malaysia ---
   { id: 101, cat: 'malaysia', text: 'Merdeka pada 31 Ogos 1957', fact: 'Persekutuan Tanah Melayu mencapai kemerdekaan pada 31 Ogos 1957.' },
@@ -72,4 +79,14 @@ export const PHRASES = [
   { id: 208, cat: 'peribahasa', text: 'Bulat air kerana pembetung, bulat manusia kerana muafakat', fact: 'Kesepakatan menyatukan masyarakat.' },
   { id: 209, cat: 'peribahasa', text: 'Ilmu pelita hidup', fact: 'Ilmu menerangi jalan kehidupan.' },
   { id: 210, cat: 'peribahasa', text: 'Yang bulat tidak datang bergolek', fact: 'Kejayaan tidak datang dengan sendirinya; ia memerlukan usaha.' },
+  { id: 211, cat: 'peribahasa', text: 'Bersatu teguh, bercerai roboh', fact: 'Perpaduan membawa kekuatan; perpecahan membawa kelemahan.' },
+  { id: 212, cat: 'peribahasa', text: 'Air dicincang tidak akan putus', fact: 'Pertalian saudara tidak putus walaupun berselisih faham.' },
+  { id: 213, cat: 'peribahasa', text: 'Seperti katak di bawah tempurung', fact: 'Orang yang pengetahuan dan pengalamannya terhad.' },
+  { id: 214, cat: 'peribahasa', text: 'Hendak seribu daya, tak hendak seribu dalih', fact: 'Jika benar-benar mahu, pelbagai cara akan dicari.' },
+  { id: 215, cat: 'peribahasa', text: 'Biar lambat asalkan selamat', fact: 'Berhati-hati lebih baik daripada tergesa-gesa.' },
+  { id: 216, cat: 'peribahasa', text: 'Bagai pinang dibelah dua', fact: 'Pasangan yang sangat sepadan.' },
+  { id: 217, cat: 'peribahasa', text: 'Tak kenal maka tak cinta', fact: 'Kita perlu mengenali sesuatu dahulu sebelum menghargainya.' },
+  { id: 218, cat: 'peribahasa', text: 'Ikut resmi padi, makin berisi makin tunduk', fact: 'Semakin tinggi ilmu, semakin rendah diri.' },
+  { id: 219, cat: 'peribahasa', text: 'Alang-alang menyeluk pekasam, biar sampai ke pangkal lengan', fact: 'Apabila melakukan sesuatu, biarlah sampai selesai.' },
+  { id: 220, cat: 'peribahasa', text: 'Hujan emas di negeri orang, hujan batu di negeri sendiri', fact: 'Senang di tempat orang, namun negeri sendiri tetap lebih baik.' },
 ];

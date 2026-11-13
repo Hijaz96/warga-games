@@ -339,11 +339,13 @@ async function finish() {
   lastResult = result;
   saveResult(result);
   recordStats(result);
+  // The answer stays secret on a loss, so let that phrase come up again in free play.
+  if (!won && mode === 'free') store.set(K.seen, store.get(K.seen, []).filter((id) => id !== phrase.id));
   $('#timer').textContent = formatTime(seconds);
   if (won) submitResult(result); // runs during the animation; renders when the result screen is up
 
   if (won) await view.celebrate();
-  else await view.revealAll();
+  else await view.fail();
   // Player may have navigated away during the animation.
   if (session === s) go('keputusan', true);
 }
@@ -371,8 +373,9 @@ function renderResult() {
   $('#res-title').textContent = r.won ? 'Tahniah!' : 'Cuba Lagi';
   $('#res-mode').textContent =
     r.mode === 'daily' ? `Cabaran Harian · ${formatDateMs(r.date)}` : 'Main Bebas';
-  $('#res-phrase').textContent = r.text;
-  $('#res-fact').textContent = r.fact;
+  // A lost round keeps the answer secret; the fact is hidden too since it can give the phrase away.
+  $('#res-phrase').textContent = r.won ? r.text : 'Jawapan dirahsiakan';
+  $('#res-fact').textContent = r.won ? r.fact : 'Cuba frasa lain dan pecahkan kodnya!';
   $('#res-time').textContent = formatTime(r.seconds);
   $('#res-mistakes').textContent = `${r.mistakes} / ${MAX_MISTAKES}`;
   $('#res-score').textContent = String(r.score);
@@ -545,7 +548,7 @@ function playerList(rows) {
     const who = h('div', 'lb-who');
     const name = h('div', 'lb-name');
     name.append(h('span', null, r.nickname), h('span', `badge badge-${r.user_type}`, userTypeLabel(r.user_type)));
-    who.append(name, h('div', 'lb-meta', `${r.campus} · ${formatTime(r.seconds)} · ${r.mistakes} silap`));
+    who.append(name, h('div', 'lb-meta', `${r.campus} · ${formatTime(r.seconds)}`));
     li.append(rankCell(Number(r.rank)), who, h('span', 'lb-score', String(r.score)));
     ol.append(li);
   }

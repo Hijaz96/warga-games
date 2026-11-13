@@ -497,7 +497,17 @@ svg {
 }
 
 .board {
-  --cw: clamp(20px, calc((min(100vw, 520px) - 40px) / 12.6), 34px);
+  /* Board width available inside the 16px gutters. */
+  --avail: calc(min(100vw, 520px) - 40px);
+  /* Cell width: as large as 34px, but the widest word (set by board.js) must fit on one line. */
+  --cw: max(
+    14px,
+    min(
+      34px,
+      calc(var(--avail) / 12.6),
+      calc((var(--avail) - var(--word-gaps, 0) * 3px) / var(--word-units, 1))
+    )
+  );
   margin: auto;
   display: flex;
   flex-wrap: wrap;
@@ -588,11 +598,6 @@ svg {
 
 .cell.glow .ch {
   animation: glow 0.7s ease;
-}
-
-.cell.missed .ch {
-  color: var(--bad);
-  opacity: 0.85;
 }
 
 .board.win .cell .ch {
