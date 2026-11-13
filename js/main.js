@@ -16,6 +16,7 @@ import { BoardView } from './board.js';
 import * as lb from './leaderboard.js';
 import { USER_TYPES, CAMPUSES, userTypeLabel } from './profile-options.js';
 import { store, uuid } from './storage.js';
+import { initAppsWarga } from './appswarga.js';
 
 const $ = (sel) => document.querySelector(sel);
 const K = { profile: 'tk.profile', daily: 'tk.daily', stats: 'tk.stats', seen: 'tk.freeSeen' };
@@ -571,6 +572,7 @@ function campusList(rows) {
 // ---------- wiring ----------
 
 function init() {
+  initAppsWarga();
   fillProfileOptions();
 
   $('#profile-chip').addEventListener('click', () => {

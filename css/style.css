@@ -1,15 +1,18 @@
-/* Teka Kata UiTM. Mobile-first, light/dark. */
+/* Teka Kata UiTM. Mobile-first, light/dark.
+   Light defaults are AppsWarga's default purple theme. Inside AppsWarga, js/appswarga.js
+   replaces the theme-derived tokens (primary, bg, ink, line, keys…) with the user's theme
+   and forces light mode (data-theme="light"), as AppsWarga itself is light-only. */
 :root {
-  --bg: #f5f0fb;
-  --bg-2: #ece3f7;
+  --bg: #f3e5f5;
+  --bg-2: #efe4f4;
   --surface: #ffffff;
-  --surface-2: #e9e0f4;
-  --ink: #23153a;
-  --ink-2: #5f4f78;
-  --muted: #9888b2;
-  --line: #c5b6dc;
-  --primary: #4a2380;
-  --primary-2: #6a3bb0;
+  --surface-2: #ede0f2;
+  --ink: #24142b;
+  --ink-2: #502b5f;
+  --muted: #906ba0;
+  --line: #caa5da;
+  --primary: #7b1fa2;
+  --primary-2: #ab47bc;
   --primary-ink: #ffffff;
   --gold: #e9a91f;
   --gold-2: #f6c54f;
@@ -17,19 +20,19 @@
   --ok: #17915a;
   --bad: #d43d4b;
   --sel: #ffd560;
-  --same: #efe2ff;
+  --same: #ede0f2;
   --key: #ffffff;
-  --key-ink: #2a1b45;
-  --key-off: #d7cbe7;
-  --key-off-ink: #a497bb;
-  --shadow: 0 1px 0 rgba(48, 22, 92, 0.08), 0 10px 30px -12px rgba(48, 22, 92, 0.25);
+  --key-ink: #2c1535;
+  --key-off: #dac0e5;
+  --key-off-ink: #b27dc9;
+  --shadow: 0 1px 0 rgba(0, 0, 0, 0.06), 0 10px 30px -12px rgba(0, 0, 0, 0.22);
   --radius: 18px;
   --font: 'Lexend', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #150f20;
     --bg-2: #1d1530;
     --surface: #221935;
@@ -923,10 +926,10 @@ svg {
 .badge-awam { background: #d9f3e6; color: #116b42; }
 
 @media (prefers-color-scheme: dark) {
-  .badge-pelajar { background: #1e3358; color: #a9c8ff; }
-  .badge-staf { background: #4a3210; color: #ffd28a; }
-  .badge-alumni { background: #3a2667; color: #d4bfff; }
-  .badge-awam { background: #143d2b; color: #8fe5bb; }
+  :root:not([data-theme='light']) .badge-pelajar { background: #1e3358; color: #a9c8ff; }
+  :root:not([data-theme='light']) .badge-staf { background: #4a3210; color: #ffd28a; }
+  :root:not([data-theme='light']) .badge-alumni { background: #3a2667; color: #d4bfff; }
+  :root:not([data-theme='light']) .badge-awam { background: #143d2b; color: #8fe5bb; }
 }
 
 .lb-empty,
