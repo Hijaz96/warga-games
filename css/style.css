@@ -478,6 +478,24 @@ svg {
   padding: 0 16px;
 }
 
+/* ---------- AppsWarga full screen (bridge v2, docs/miniapp-bridge.md) ----------
+   While AppsWarga's header is hidden, <html> has .appswarga-fullscreen and the page runs
+   edge to edge behind the status bar. Pad the top by --appswarga-safe-top (the status bar's
+   height; env() isn't reliable in Android's web view), and keep the top-right 56 px clear:
+   AppsWarga's close button sits there, so each screen's top row stops short of it. */
+html.appswarga-fullscreen .screen {
+  padding-top: calc(var(--appswarga-safe-top, 0px) + 12px);
+}
+
+html.appswarga-fullscreen .home-head,
+html.appswarga-fullscreen .screen-board .bar {
+  padding-right: 44px; /* + the screen's 16 px gutter = 60 px from the edge */
+}
+
+html.appswarga-fullscreen .screen-game .bar {
+  padding-right: 60px; /* the game screen has no gutter of its own */
+}
+
 .mistakes {
   display: flex;
   align-items: center;
