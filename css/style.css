@@ -996,6 +996,53 @@ svg {
   outline: none;
 }
 
+/* Selects: drop the native arrow (cramped and different on every platform) and draw our own. */
+.select-wrap {
+  position: relative;
+  display: block;
+}
+
+.field select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 44px;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.select-wrap::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  width: 9px;
+  height: 9px;
+  border-right: 2.5px solid var(--primary);
+  border-bottom: 2.5px solid var(--primary);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+
+/* User type set by AppsWarga: shown, but not changeable, so no arrow. */
+.field select:disabled {
+  opacity: 1;
+  color: var(--ink);
+  background: var(--bg-2);
+  border-style: dashed;
+  cursor: not-allowed;
+  padding-right: 12px;
+}
+
+.select-wrap.locked::after {
+  display: none;
+}
+
+.field-hint {
+  font-weight: 500;
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+
 .form-error {
   color: var(--bad);
   min-height: 1.2em;

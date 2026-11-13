@@ -72,6 +72,53 @@ async function onBridgeReady() {
 
 export const inAppsWarga = () => Boolean(window.appswarga?.ready);
 
+/** Resolves once the bridge is ready; rejects after `ms` outside AppsWarga. */
+function whenReady(ms = 3000) {
+  if (inAppsWarga()) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const done = () => {
+      clearTimeout(t);
+      resolve();
+    };
+    const t = setTimeout(() => {
+      window.removeEventListener('appswargaReady', done);
+      reject(new Error('NOT_IN_APPSWARGA'));
+    }, ms);
+    window.addEventListener('appswargaReady', done, { once: true });
+  });
+}
+
+// Game user types (js/profile-options.js) each AppsWarga account type may use.
+// Staff and students get exactly one; a "public" account can be alumni or the general public.
+// Testers aren't listed, so they choose freely.
+const ALLOWED_TYPES = {
+  staff: ['staf'],
+  student: ['pelajar'],
+  public: ['alumni', 'awam'],
+};
+let allowedPromise = null;
+
+/**
+ * The game user types the signed-in AppsWarga user may choose from, or null when there's no
+ * restriction: outside AppsWarga, not signed in, a tester, or TOKEN_UNAVAILABLE (offline, or the
+ * mini-app has no token secret yet — getUserSession then returns no user type at all).
+ */
+export function appsWargaAllowedUserTypes() {
+  allowedPromise ??= (async () => {
+    try {
+      await whenReady();
+      const reply = await window.appswarga.callHandler('getUserSession');
+      return reply?.status === 'success' ? (ALLOWED_TYPES[reply.data?.userType] ?? null) : null;
+    } catch {
+      return null;
+    }
+  })().then((allowed) => {
+    if (!allowed) allowedPromise = null; // try again next time (e.g. after coming back online)
+    return allowed;
+  });
+  return allowedPromise;
+}
+
 export function initAppsWarga() {
   window.addEventListener('appswargaThemeChange', (e) => applyTheme(e.detail));
   // The bridge is injected when the page starts loading and again when it finishes.

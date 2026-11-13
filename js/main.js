@@ -16,7 +16,7 @@ import { BoardView } from './board.js';
 import * as lb from './leaderboard.js';
 import { USER_TYPES, CAMPUSES, userTypeLabel } from './profile-options.js';
 import { store, uuid } from './storage.js';
-import { initAppsWarga } from './appswarga.js';
+import { initAppsWarga, appsWargaAllowedUserTypes } from './appswarga.js';
 
 const $ = (sel) => document.querySelector(sel);
 const K = { profile: 'tk.profile', daily: 'tk.daily', stats: 'tk.stats', seen: 'tk.freeSeen' };
@@ -26,6 +26,7 @@ let session = null; // { mode, date, phrase, state, startedAt }
 let lastResult = null;
 let timerId = 0;
 let afterProfile = null;
+let appAllowedTypes = null; // user types the AppsWarga account may use (null = any)
 let boardTab = 'daily';
 let submitting = false;
 let toastTimer = 0;
@@ -124,7 +125,50 @@ function openProfile() {
   $('#pf-type').value = p?.userType ?? '';
   $('#pf-campus').value = p?.campus ?? '';
   $('#pf-error').textContent = '';
+  applyUserTypeRules();
   $('#dlg-profile').showModal();
+  if (!appAllowedTypes) syncUserTypeFromApp(); // retry, e.g. the first try was offline
+}
+
+/** The type to use when a saved one isn't allowed: the only choice, or Orang Awam for public accounts. */
+const fallbackType = (allowed) => (allowed.includes('awam') ? 'awam' : allowed[0]);
+
+/**
+ * Inside AppsWarga, the signed-in account limits the user type: staff and students are locked
+ * to Staf / Pelajar, public accounts choose Alumni or Orang Awam. A saved profile outside those
+ * choices is corrected. When AppsWarga can't say (outside the app, a tester, or no token yet),
+ * the player picks any type as usual.
+ */
+async function syncUserTypeFromApp() {
+  const allowed = await appsWargaAllowedUserTypes();
+  if (!allowed) return;
+  appAllowedTypes = allowed;
+  const p = loadProfile();
+  if (p && !allowed.includes(p.userType)) {
+    store.set(K.profile, { ...p, userType: fallbackType(allowed) });
+    renderProfileChip();
+  }
+  applyUserTypeRules();
+}
+
+function applyUserTypeRules() {
+  const select = $('#pf-type');
+  const allowed = appAllowedTypes;
+  for (const opt of select.options) {
+    if (!opt.value) continue; // the "Pilih kategori…" placeholder stays as it is
+    const off = Boolean(allowed) && !allowed.includes(opt.value);
+    opt.disabled = off;
+    opt.hidden = off;
+  }
+  const locked = allowed?.length === 1;
+  if (allowed && !allowed.includes(select.value)) select.value = locked ? allowed[0] : '';
+  select.disabled = locked;
+  select.parentElement.classList.toggle('locked', locked); // hides the arrow
+  const hint = $('#pf-type-hint');
+  hint.hidden = !allowed;
+  hint.textContent = locked
+    ? 'Ditetapkan oleh akaun AppsWarga anda.'
+    : 'Akaun awam AppsWarga: pilih Alumni atau Orang Awam.';
 }
 
 function fillProfileOptions() {
@@ -150,7 +194,9 @@ function saveProfileFromForm(e) {
   const userType = $('#pf-type').value;
   const campus = $('#pf-campus').value;
   if (!nickname) return void ($('#pf-error').textContent = 'Sila masukkan nama panggilan.');
-  if (!userType) return void ($('#pf-error').textContent = 'Sila pilih kategori.');
+  if (!userType || (appAllowedTypes && !appAllowedTypes.includes(userType))) {
+    return void ($('#pf-error').textContent = 'Sila pilih kategori.');
+  }
   if (!campus) return void ($('#pf-error').textContent = 'Sila pilih kampus.');
   const prev = loadProfile();
   store.set(K.profile, { playerId: prev?.playerId ?? uuid(), nickname: nickname.slice(0, 20), userType, campus });
@@ -573,6 +619,7 @@ function campusList(rows) {
 
 function init() {
   initAppsWarga();
+  syncUserTypeFromApp();
   fillProfileOptions();
 
   $('#profile-chip').addEventListener('click', () => {
