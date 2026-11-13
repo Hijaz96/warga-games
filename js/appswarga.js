@@ -72,20 +72,23 @@ async function onBridgeReady() {
 
 export const inAppsWarga = () => Boolean(window.appswarga?.ready);
 
-/** Resolves once the bridge is ready; rejects after `ms` outside AppsWarga. */
-function whenReady(ms = 3000) {
+/**
+ * Resolves once the bridge is ready, with no time limit (as AppsWarga's own
+ * miniapp-bridge-test.html does). The bridge may only arrive when the page finishes loading,
+ * fonts and all, which on a phone can take well over a few seconds. Outside AppsWarga it
+ * never resolves, which simply means "no restriction".
+ */
+function whenReady() {
   if (inAppsWarga()) return Promise.resolve();
-  return new Promise((resolve, reject) => {
-    const done = () => {
-      clearTimeout(t);
-      resolve();
-    };
-    const t = setTimeout(() => {
-      window.removeEventListener('appswargaReady', done);
-      reject(new Error('NOT_IN_APPSWARGA'));
-    }, ms);
-    window.addEventListener('appswargaReady', done, { once: true });
-  });
+  return new Promise((resolve) => window.addEventListener('appswargaReady', () => resolve(), { once: true }));
+}
+
+/** callHandler with a time limit, like the test page; resolves an error reply on timeout. */
+function callBridge(name, options = {}, timeoutMs = 30000) {
+  return Promise.race([
+    window.appswarga.callHandler(name, options),
+    new Promise((resolve) => setTimeout(() => resolve({ status: 'error', code: 'TIMEOUT' }), timeoutMs)),
+  ]);
 }
 
 // Game user types (js/profile-options.js) each AppsWarga account type may use.
@@ -98,19 +101,36 @@ const ALLOWED_TYPES = {
   public: ['alumni', 'awam'],
 };
 let allowedPromise = null;
+let lastSessionError = null;
+
+/**
+ * Why the last user-type lookup failed inside AppsWarga, e.g. TOKEN_UNAVAILABLE (no token
+ * secret for this mini-app yet, offline, or not listed for this user type) or
+ * UNKNOWN_USER_TYPE; null if it worked or we're outside the app.
+ */
+export const appsWargaSessionError = () => lastSessionError;
 
 /**
  * The game user types the signed-in AppsWarga user may choose from, or null when there's no
- * restriction: outside AppsWarga, not signed in, or TOKEN_UNAVAILABLE (offline, or the
- * mini-app has no token secret yet — getUserSession then returns no user type at all).
+ * restriction: not signed in, or TOKEN_UNAVAILABLE (offline, or the mini-app has no token
+ * secret yet — getUserSession then returns no user type at all). Outside AppsWarga the
+ * promise never settles, so nothing is restricted.
  */
 export function appsWargaAllowedUserTypes() {
   allowedPromise ??= (async () => {
+    await whenReady(); // outside AppsWarga this stays pending: no restriction, nothing to report
     try {
-      await whenReady();
-      const reply = await window.appswarga.callHandler('getUserSession');
-      return reply?.status === 'success' ? (ALLOWED_TYPES[reply.data?.userType] ?? null) : null;
+      // The first call may wait for AppsWarga's token server to start (cold start).
+      const reply = await callBridge('getUserSession');
+      if (reply?.status !== 'success') {
+        lastSessionError = reply?.code || 'NO_REPLY';
+        return null;
+      }
+      const allowed = ALLOWED_TYPES[reply.data?.userType] ?? null;
+      lastSessionError = allowed ? null : `UNKNOWN_USER_TYPE:${reply.data?.userType}`;
+      return allowed;
     } catch {
+      lastSessionError = 'BRIDGE_ERROR';
       return null;
     }
   })().then((allowed) => {

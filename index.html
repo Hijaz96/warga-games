@@ -136,7 +136,7 @@
 
   <!-- Profil -->
   <dialog id="dlg-profile" class="dialog">
-    <form id="profile-form" method="dialog">
+    <form id="profile-form" method="dialog" novalidate>
       <h2>Profil Pemain</h2>
       <p class="muted">Dipaparkan pada papan markah.</p>
       <label class="field">
@@ -146,7 +146,7 @@
       <label class="field">
         <span>Kategori</span>
         <span class="select-wrap"><select id="pf-type" name="user_type" required aria-describedby="pf-type-hint"></select></span>
-        <small class="field-hint" id="pf-type-hint" hidden>Ditetapkan oleh akaun AppsWarga anda.</small>
+        <small class="field-hint" id="pf-type-hint" hidden></small>
       </label>
       <label class="field">
         <span>Kampus</span>

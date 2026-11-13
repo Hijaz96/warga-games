@@ -15,8 +15,9 @@ import { computeScore, formatTime } from './score.js';
 import { BoardView } from './board.js';
 import * as lb from './leaderboard.js';
 import { USER_TYPES, CAMPUSES, userTypeLabel } from './profile-options.js';
+import { enhanceSelect, refreshSelect, closeSelectSheet } from './select.js';
 import { store, uuid } from './storage.js';
-import { initAppsWarga, appsWargaAllowedUserTypes } from './appswarga.js';
+import { initAppsWarga, appsWargaAllowedUserTypes, appsWargaSessionError } from './appswarga.js';
 
 const $ = (sel) => document.querySelector(sel);
 const K = { profile: 'tk.profile', daily: 'tk.daily', stats: 'tk.stats', seen: 'tk.freeSeen' };
@@ -141,7 +142,7 @@ const fallbackType = (allowed) => (allowed.includes('awam') ? 'awam' : allowed[0
  */
 async function syncUserTypeFromApp() {
   const allowed = await appsWargaAllowedUserTypes();
-  if (!allowed) return;
+  if (!allowed) return applyUserTypeRules(); // shows why, if AppsWarga refused
   appAllowedTypes = allowed;
   const p = loadProfile();
   if (p && !allowed.includes(p.userType)) {
@@ -154,21 +155,25 @@ async function syncUserTypeFromApp() {
 function applyUserTypeRules() {
   const select = $('#pf-type');
   const allowed = appAllowedTypes;
+  // Types the account can't use stay listed but disabled (e.g. Pelajar/Staf for a public account).
   for (const opt of select.options) {
     if (!opt.value) continue; // the "Pilih kategori…" placeholder stays as it is
-    const off = Boolean(allowed) && !allowed.includes(opt.value);
-    opt.disabled = off;
-    opt.hidden = off;
+    opt.disabled = Boolean(allowed) && !allowed.includes(opt.value);
   }
   const locked = allowed?.length === 1;
-  if (allowed && !allowed.includes(select.value)) select.value = locked ? allowed[0] : '';
+  // Pre-select: the only choice, or Orang Awam for a public account (they may switch to Alumni).
+  if (allowed && !allowed.includes(select.value)) select.value = fallbackType(allowed);
   select.disabled = locked;
-  select.parentElement.classList.toggle('locked', locked); // hides the arrow
+  select.parentElement.classList.toggle('locked', locked); // lock icon instead of the arrow
+  // No text under the field, except the bridge's error code when the lookup failed in AppsWarga.
   const hint = $('#pf-type-hint');
-  hint.hidden = !allowed;
-  hint.textContent = locked
-    ? 'Ditetapkan oleh akaun AppsWarga anda.'
-    : 'Akaun awam AppsWarga: pilih Alumni atau Orang Awam.';
+  const error = allowed ? null : appsWargaSessionError();
+  hint.hidden = !error;
+  hint.classList.toggle('warn', Boolean(error));
+  hint.textContent = error ? `Kategori tidak dapat disemak dengan AppsWarga (${error}).` : '';
+  // Values were set from code; show them on the custom dropdowns.
+  refreshSelect(select);
+  refreshSelect($('#pf-campus'));
 }
 
 function fillProfileOptions() {
@@ -621,6 +626,8 @@ function init() {
   initAppsWarga();
   syncUserTypeFromApp();
   fillProfileOptions();
+  enhanceSelect($('#pf-type'));
+  enhanceSelect($('#pf-campus'));
 
   $('#profile-chip').addEventListener('click', () => {
     afterProfile = null;
@@ -628,7 +635,10 @@ function init() {
   });
   $('#profile-form').addEventListener('submit', saveProfileFromForm);
   $('#pf-cancel').addEventListener('click', () => $('#dlg-profile').close('cancel'));
-  $('#dlg-profile').addEventListener('close', onProfileClosed);
+  $('#dlg-profile').addEventListener('close', () => {
+    closeSelectSheet();
+    onProfileClosed();
+  });
 
   $('#btn-help').addEventListener('click', () => $('#dlg-help').showModal());
   $('#help-close').addEventListener('click', () => $('#dlg-help').close());
