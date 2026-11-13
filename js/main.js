@@ -61,6 +61,34 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
+/**
+ * Reloads the game with fresh files. A plain reload can still use cached JS/CSS (GitHub Pages
+ * lets them be cached ~10 min, and so does AppsWarga's web view), so first re-download every
+ * same-site file this page loaded with `cache: 'reload'`, which bypasses the cache and stores
+ * the fresh copy, then reload. localStorage (profile, progress) is left alone.
+ */
+async function hardReload() {
+  const btn = $('#btn-version');
+  btn.disabled = true;
+  toast('Memuat semula…');
+  const urls = new Set([location.href.split('#')[0]]);
+  for (const entry of performance.getEntriesByType('resource')) {
+    try {
+      const url = new URL(entry.name);
+      if (url.origin === location.origin) urls.add(url.href.split('#')[0]);
+    } catch {
+      /* not a URL */
+    }
+  }
+  try {
+    if (window.caches) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
+  } catch {
+    /* Cache Storage unavailable */
+  }
+  await Promise.allSettled([...urls].map((u) => fetch(u, { cache: 'reload' })));
+  location.reload();
+}
+
 const loadProfile = () => store.get(K.profile);
 const elapsedSeconds = () => Math.max(1, Math.round((Date.now() - session.startedAt) / 1000));
 const modeLabel = (mode) => (mode === 'daily' ? 'Cabaran Harian' : 'Main Bebas');
@@ -646,6 +674,7 @@ function init() {
   $('#btn-daily').addEventListener('click', () => go('harian'));
   $('#btn-free').addEventListener('click', () => go('bebas'));
   $('#btn-board').addEventListener('click', () => go('papan'));
+  $('#btn-version').addEventListener('click', hardReload);
   $('#btn-quit').addEventListener('click', () => go(''));
 
   $('#res-again').addEventListener('click', () => go('bebas', true));

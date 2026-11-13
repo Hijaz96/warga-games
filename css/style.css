@@ -384,6 +384,25 @@ svg {
   margin: 18px 0 0;
 }
 
+/* Sits at the very bottom of the home screen, however tall the screen is.
+   Tapping it reloads the game, bypassing the cache. */
+.app-version {
+  align-self: center;
+  margin: auto 0 0;
+  min-height: 44px;
+  padding: 12px 16px 0;
+  border: 0;
+  background: none;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.app-version:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
 .mini-stats div {
   background: color-mix(in srgb, var(--surface) 60%, transparent);
   border-radius: 14px;
