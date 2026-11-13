@@ -533,15 +533,10 @@ html.appswarga-fullscreen .screen {
 .board {
   /* Board width available inside the 16px gutters. */
   --avail: calc(min(100vw, 520px) - 40px);
-  /* Cell width: as large as 34px, but the widest word (set by board.js) must fit on one line. */
-  --cw: max(
-    14px,
-    min(
-      34px,
-      calc(var(--avail) / 12.6),
-      calc((var(--avail) - var(--word-gaps, 0) * 3px) / var(--word-units, 1))
-    )
-  );
+  /* One fixed cell width for every phrase (the standard size, as for "Kuala Lumpur ibu
+     negara"), up to 34px on wide screens. 11 cells always fit on a line (LINE_CELLS in
+     js/board.js); longer words wrap. */
+  --cw: min(34px, calc(var(--avail) / 12.6));
   margin: auto;
   display: flex;
   flex-wrap: wrap;
@@ -552,9 +547,21 @@ html.appswarga-fullscreen .screen {
   max-width: 100%;
 }
 
+/* A word's pieces stay together on one line when they fit, and wrap otherwise. */
 .word {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px 3px;
+}
+
+.chunk {
+  display: flex;
   gap: 3px;
+}
+
+.cell.cont .ch {
+  color: var(--muted);
 }
 
 .cell {
@@ -646,7 +653,8 @@ html.appswarga-fullscreen .screen {
 /* ---------- keyboard ---------- */
 .keyboard {
   background: var(--surface-2);
-  padding: 10px 6px max(10px, env(safe-area-inset-bottom));
+  /* Extra room under the last row so the keys sit clear of the screen's bottom edge. */
+  padding: 10px 6px calc(max(10px, env(safe-area-inset-bottom)) + 14px);
   display: grid;
   gap: 7px;
   border-radius: 20px 20px 0 0;

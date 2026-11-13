@@ -16,6 +16,46 @@ function el(tag, className, text) {
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Cells that always fit on one line at the fixed cell size (--cw in css/style.css, the board
+ * width / 12.6): 11 cells and their gaps fit on every screen width.
+ */
+export const LINE_CELLS = 11;
+
+/**
+ * Splits a word (cell indices) into pieces that each fit on one line, so cells can keep one
+ * fixed size. Breaks after a hyphen first (UNDANG- | UNDANG); a piece still too long is cut
+ * into even parts, each but the last flagged `cont` to show a continuation hyphen.
+ * Short words come back as a single piece.
+ */
+export function wordChunks(cells, word) {
+  const parts = [];
+  let current = [];
+  for (const i of word) {
+    current.push(i);
+    if (cells[i].ch === '-') {
+      parts.push(current);
+      current = [];
+    }
+  }
+  if (current.length) parts.push(current);
+
+  const out = [];
+  for (const part of parts) {
+    if (part.length <= LINE_CELLS) {
+      out.push({ idxs: part, cont: false });
+      continue;
+    }
+    // Leave room for the continuation hyphen on every piece but the last.
+    const pieces = Math.ceil(part.length / (LINE_CELLS - 1));
+    const size = Math.ceil(part.length / pieces);
+    for (let s = 0; s < part.length; s += size) {
+      out.push({ idxs: part.slice(s, s + size), cont: s + size < part.length });
+    }
+  }
+  return out;
+}
+
 export class BoardView {
   /** handlers: { onLetter(letter), onMove(dir), onSelect(idx) } */
   constructor(boardEl, keyboardEl, handlers) {
@@ -68,52 +108,43 @@ export class BoardView {
     this.boardEl.replaceChildren();
     this.cells = [];
     let order = 0;
+    // Cells have one fixed size. A word wraps between its pieces only when it can't fit on a
+    // line (see wordChunks); the puzzle area scrolls when a phrase needs many lines.
     for (const word of state.words) {
       const w = el('div', 'word');
-      for (const idx of word) {
-        const c = state.cells[idx];
-        let root;
-        if (c.letter) {
-          root = el('button', 'cell');
-          root.type = 'button';
-          root.dataset.idx = String(idx);
-          const ch = el('span', 'ch');
-          root.append(ch, el('span', 'num', String(c.num)));
-          this.cells[idx] = { root, ch };
-        } else {
-          const punct = !/[0-9]/.test(c.ch);
-          root = el('span', `cell static${punct ? ' punct' : ''}`);
-          root.setAttribute('aria-hidden', 'true');
-          root.append(el('span', 'ch', c.ch), el('span', 'num', ''));
+      for (const chunk of wordChunks(state.cells, word)) {
+        const piece = el('div', 'chunk');
+        for (const idx of chunk.idxs) {
+          const c = state.cells[idx];
+          let root;
+          if (c.letter) {
+            root = el('button', 'cell');
+            root.type = 'button';
+            root.dataset.idx = String(idx);
+            const ch = el('span', 'ch');
+            root.append(ch, el('span', 'num', String(c.num)));
+            this.cells[idx] = { root, ch };
+          } else {
+            const punct = !/[0-9]/.test(c.ch);
+            root = el('span', `cell static${punct ? ' punct' : ''}`);
+            root.setAttribute('aria-hidden', 'true');
+            root.append(el('span', 'ch', c.ch), el('span', 'num', ''));
+          }
+          root.style.setProperty('--i', String(order++));
+          piece.append(root);
         }
-        root.style.setProperty('--i', String(order++));
-        w.append(root);
+        if (chunk.cont) {
+          // The word carries on on the next line.
+          const dash = el('span', 'cell static punct cont');
+          dash.setAttribute('aria-hidden', 'true');
+          dash.append(el('span', 'ch', '-'), el('span', 'num', ''));
+          piece.append(dash);
+        }
+        w.append(piece);
       }
       this.boardEl.append(w);
     }
-    this.fitLongestWord(state);
     this.update();
-  }
-
-  /**
-   * Words never break across lines, so cell size is capped by the widest word.
-   * Passes its width in cell units (punctuation is narrower) and its gap count to CSS.
-   */
-  fitLongestWord(state) {
-    let units = 1;
-    let gaps = 0;
-    for (const word of state.words) {
-      const u = word.reduce((sum, i) => {
-        const c = state.cells[i];
-        return sum + (c.letter || /[0-9]/.test(c.ch) ? 1 : 0.45);
-      }, 0);
-      if (u > units) {
-        units = u;
-        gaps = word.length - 1;
-      }
-    }
-    this.boardEl.style.setProperty('--word-units', String(units));
-    this.boardEl.style.setProperty('--word-gaps', String(gaps));
   }
 
   update() {
