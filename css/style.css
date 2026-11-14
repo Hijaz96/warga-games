@@ -204,6 +204,21 @@ svg {
   gap: 12px;
 }
 
+.head-actions {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+
+/* The close button only exists inside AppsWarga. */
+#btn-close-app {
+  display: none;
+}
+
+html.in-appswarga #btn-close-app {
+  display: grid;
+}
+
 .profile-chip {
   display: flex;
   align-items: center;

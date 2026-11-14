@@ -91,6 +91,11 @@ async function hideCloseButton() {
 
 export const inAppsWarga = () => Boolean(window.appswarga?.ready);
 
+/** Leaves the mini-app and returns to AppsWarga (bridge `close`). */
+export function closeMiniApp() {
+  if (inAppsWarga()) window.appswarga.callHandler('close');
+}
+
 /**
  * Resolves once the bridge is ready, with no time limit (as AppsWarga's own
  * miniapp-bridge-test.html does). The bridge may only arrive when the page finishes loading,

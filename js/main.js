@@ -17,7 +17,7 @@ import * as lb from './leaderboard.js';
 import { USER_TYPES, CAMPUSES, userTypeLabel } from './profile-options.js';
 import { enhanceSelect, refreshSelect, closeSelectSheet } from './select.js';
 import { store, uuid } from './storage.js';
-import { initAppsWarga, appsWargaAllowedUserTypes, appsWargaSessionError } from './appswarga.js';
+import { initAppsWarga, appsWargaAllowedUserTypes, appsWargaSessionError, closeMiniApp } from './appswarga.js';
 
 const $ = (sel) => document.querySelector(sel);
 const K = { profile: 'tk.profile', daily: 'tk.daily', stats: 'tk.stats', seen: 'tk.freeSeen' };
@@ -670,6 +670,7 @@ function init() {
   });
 
   $('#btn-help').addEventListener('click', () => $('#dlg-help').showModal());
+  $('#btn-close-app').addEventListener('click', closeMiniApp);
   $('#help-close').addEventListener('click', () => $('#dlg-help').close());
 
   $('#btn-daily').addEventListener('click', () => go('harian'));
