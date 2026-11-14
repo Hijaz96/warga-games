@@ -23,7 +23,7 @@ The game plays fully offline. Until `js/config.js` is filled in, the leaderboard
 
 1. Create a new Supabase project (region **ap-southeast-1 / Singapore** is closest to Malaysia).
 2. Open **SQL Editor**, paste all of [`supabase/schema.sql`](supabase/schema.sql) and run it.
-   It creates the `cg_scores` table and the `cg_submit`, `cg_top` and `cg_campus_rank` functions.
+   It creates the `cg_scores` table and the `cg_submit`, `cg_top_total` and `cg_campus_rank` functions.
    The script is safe to re-run.
 3. In **Project Settings → API**, copy the **Project URL** and the **publishable key**
    (`sb_publishable_…`; a legacy `anon` key also works) into [`js/config.js`](js/config.js).

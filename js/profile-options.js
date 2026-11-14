@@ -24,5 +24,8 @@ export const CAMPUSES = [
   { state: 'Sabah', items: ['UiTM Kota Kinabalu', 'UiTM Tawau'] },
   { state: 'Sarawak', items: ['UiTM Samarahan', 'UiTM Mukah'] },
   { state: 'Terengganu', items: ['UiTM Dungun', 'UiTM Bukit Besi', 'UiTM Kuala Terengganu'] },
-  { state: 'Lain-lain', items: ['Bukan warga kampus UiTM'] },
+  { state: 'Lain-lain', items: ['Bukan warga UiTM'] },
 ];
+
+/** Default campus for the Orang Awam category. */
+export const NON_UITM_CAMPUS = 'Bukan warga UiTM';

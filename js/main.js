@@ -14,7 +14,7 @@ import { mulberry32, hashString, randomSeed, todayKL } from './rng.js';
 import { computeScore, formatTime } from './score.js';
 import { BoardView } from './board.js';
 import * as lb from './leaderboard.js';
-import { USER_TYPES, CAMPUSES, userTypeLabel } from './profile-options.js';
+import { USER_TYPES, CAMPUSES, NON_UITM_CAMPUS, userTypeLabel } from './profile-options.js';
 import { enhanceSelect, refreshSelect, closeSelectSheet } from './select.js';
 import { store, uuid } from './storage.js';
 import { initAppsWarga, appsWargaAllowedUserTypes, appsWargaSessionError, closeMiniApp } from './appswarga.js';
@@ -191,6 +191,8 @@ function applyUserTypeRules() {
   const locked = allowed?.length === 1;
   // Pre-select: the only choice, or Orang Awam for a public account (they may switch to Alumni).
   if (allowed && !allowed.includes(select.value)) select.value = fallbackType(allowed);
+  // Orang Awam with no campus chosen yet: default to "Bukan warga UiTM".
+  if (select.value === 'awam' && !$('#pf-campus').value) $('#pf-campus').value = NON_UITM_CAMPUS;
   select.disabled = locked;
   select.parentElement.classList.toggle('locked', locked); // lock icon instead of the arrow
   // No text under the field, except the bridge's error code when the lookup failed in AppsWarga.
@@ -590,8 +592,13 @@ function boardMessage(text, retry) {
 
 async function loadTab(tab) {
   const date = todayKL();
+  // Every board ranks by cumulative points, with total play time and games played.
   $('#board-sub').textContent =
-    tab === 'daily' ? formatDateMs(date) : tab === 'alltime' ? 'Markah terbaik setiap pemain' : 'Jumlah markah terbaik pemain';
+    tab === 'daily'
+      ? `Jumlah hari ini · ${formatDateMs(date)}`
+      : tab === 'alltime'
+        ? 'Jumlah markah & masa bermain'
+        : 'Jumlah markah semua pemain kampus';
   if (!lb.isConfigured()) {
     boardMessage('Papan markah belum dikonfigurasi. Lihat README untuk menyambung Supabase.');
     return;
@@ -611,7 +618,7 @@ async function loadTab(tab) {
       boardMessage(tab === 'daily' ? 'Belum ada markah hari ini. Jadilah yang pertama!' : 'Belum ada markah.');
       return;
     }
-    body.replaceChildren(tab === 'campus' ? campusList(rows) : playerList(rows));
+    body.replaceChildren(tab === 'campus' ? campusList(rows) : totalsList(rows, { showGames: tab === 'daily' }));
   } catch (err) {
     if (boardTab === tab) boardMessage(`Gagal memuatkan: ${err.message}`, () => loadTab(tab));
   }
@@ -622,28 +629,48 @@ function rankCell(rank) {
   return h('span', `lb-rank${medal ? ' medal' : ''}`, medal ?? String(rank));
 }
 
-function playerList(rows) {
+/**
+ * Hari Ini / Keseluruhan: cumulative points, with total play time and campus under the name.
+ * The games played ("4x") only shows when `showGames` (Hari Ini).
+ */
+function totalsList(rows, { showGames = false } = {}) {
   const ol = h('ol', 'lb-list');
   for (const r of rows) {
     const li = h('li', `lb-row${r.is_me ? ' me' : ''}`);
     const who = h('div', 'lb-who');
     const name = h('div', 'lb-name');
     name.append(h('span', null, r.nickname), h('span', `badge badge-${r.user_type}`, userTypeLabel(r.user_type)));
-    who.append(name, h('div', 'lb-meta', `${r.campus} · ${formatTime(r.seconds)}`));
-    li.append(rankCell(Number(r.rank)), who, h('span', 'lb-score', String(r.score)));
+    // Time and games first, so a long campus name is what gets cut short. Games as "4x".
+    const meta = [`⏱ ${formatDuration(Number(r.total_seconds))}`];
+    if (showGames) meta.push(`${r.games}x`);
+    meta.push(r.campus);
+    who.append(name, h('div', 'lb-meta', meta.join(' · ')));
+    li.append(rankCell(Number(r.rank)), who, h('span', 'lb-score', Number(r.total_score).toLocaleString('ms-MY')));
     ol.append(li);
   }
   return ol;
 }
 
+/** Total play time: "45s", "12m 30s", "3j 05m". */
+function formatDuration(totalSeconds) {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const hrs = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (hrs) return `${hrs}j ${String(m).padStart(2, '0')}m`;
+  if (m) return `${m}m ${String(s % 60).padStart(2, '0')}s`;
+  return `${s}s`;
+}
+
+/** Kampus: cumulative points of all the campus's games, with play time and players. */
 function campusList(rows) {
   const myCampus = loadProfile()?.campus;
   const ol = h('ol', 'lb-list');
   for (const r of rows) {
     const li = h('li', `lb-row${r.campus === myCampus ? ' me' : ''}`);
     const who = h('div', 'lb-who');
-    who.append(h('div', 'lb-name', r.campus), h('div', 'lb-meta', `${r.players} pemain · terbaik ${r.best_score}`));
-    li.append(rankCell(Number(r.rank)), who, h('span', 'lb-score', String(r.total_score)));
+    const meta = `⏱ ${formatDuration(Number(r.total_seconds))} · ${r.players} pemain`;
+    who.append(h('div', 'lb-name', r.campus), h('div', 'lb-meta', meta));
+    li.append(rankCell(Number(r.rank)), who, h('span', 'lb-score', Number(r.total_score).toLocaleString('ms-MY')));
     ol.append(li);
   }
   return ol;
@@ -657,6 +684,12 @@ function init() {
   fillProfileOptions();
   enhanceSelect($('#pf-type'));
   enhanceSelect($('#pf-campus'));
+  // Choosing Orang Awam sets the campus to "Bukan warga UiTM"; the player can still change it.
+  $('#pf-type').addEventListener('change', () => {
+    if ($('#pf-type').value !== 'awam') return;
+    $('#pf-campus').value = NON_UITM_CAMPUS;
+    refreshSelect($('#pf-campus'));
+  });
 
   $('#profile-chip').addEventListener('click', () => {
     afterProfile = null;

@@ -17,8 +17,8 @@ function el(tag, className, text) {
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /**
- * Cells that always fit on one line at the fixed cell size (--cw in css/style.css, the board
- * width / 12.6): 11 cells and their gaps fit on every screen width.
+ * Cells per line at the fixed cell size: --cw in css/style.css is sized so 11 cells and their
+ * 2px gaps exactly fill the board's width on every screen.
  */
 export const LINE_CELLS = 11;
 

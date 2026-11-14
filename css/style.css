@@ -385,6 +385,11 @@ html.in-appswarga #btn-close-app {
   border-radius: 999px;
   background: color-mix(in srgb, var(--primary) 14%, transparent);
   color: var(--primary);
+  /* Always one line ("CABARAN HARIAN" on narrow phones): cut with "…" if it can't fit. */
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tag-gold {
@@ -454,6 +459,10 @@ html.in-appswarga #btn-close-app {
 
 .bar-title {
   font-weight: 700;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bar-sub {
@@ -552,10 +561,9 @@ html.appswarga-fullscreen.aw-close-visible .screen {
 .board {
   /* Board width available inside the 16px gutters. */
   --avail: calc(min(100vw, 520px) - 40px);
-  /* One fixed cell width for every phrase (the standard size, as for "Kuala Lumpur ibu
-     negara"), up to 34px on wide screens. 11 cells always fit on a line (LINE_CELLS in
-     js/board.js); longer words wrap. */
-  --cw: min(34px, calc(var(--avail) / 12.6));
+  /* One fixed cell width for every phrase: exactly 11 cells and their 2px gaps fill a line
+     (LINE_CELLS in js/board.js), up to 34px on wide screens. Longer words wrap. */
+  --cw: min(34px, calc((var(--avail) - 20px) / 11));
   margin: auto;
   display: flex;
   flex-wrap: wrap;
@@ -571,12 +579,12 @@ html.appswarga-fullscreen.aw-close-visible .screen {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 16px 3px;
+  gap: 16px 2px;
 }
 
 .chunk {
   display: flex;
-  gap: 3px;
+  gap: 2px;
 }
 
 .cell.cont .ch {

@@ -47,10 +47,14 @@ export async function submitScore(r) {
   return Array.isArray(rows) ? rows[0] : rows;
 }
 
+/**
+ * Player boards ranked by cumulative points, with total play time and games played:
+ * one day's games (Hari Ini) or all time (Keseluruhan).
+ * Rows: { rank, nickname, user_type, campus, total_score, total_seconds, games, is_me }.
+ */
 export const topDaily = (date, playerId) =>
-  rpc('cg_top', { p_board: 'daily', p_play_date: date, p_player_id: playerId ?? null });
+  rpc('cg_top_total', { p_player_id: playerId ?? null, p_play_date: date });
 
-export const topAllTime = (playerId) =>
-  rpc('cg_top', { p_board: 'alltime', p_player_id: playerId ?? null });
+export const topAllTime = (playerId) => rpc('cg_top_total', { p_player_id: playerId ?? null });
 
 export const campusRanking = () => rpc('cg_campus_rank', {});
