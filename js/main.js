@@ -275,7 +275,7 @@ function renderHome() {
     status.textContent = r.won
       ? `Selesai dalam ${formatTime(r.seconds)} · ${r.score} mata${r.submit?.rank ? ` · #${r.submit.rank}` : ''}`
       : 'Tidak berjaya hari ini. Cuba lagi esok!';
-    btn.textContent = 'Lihat Keputusan';
+    btn.textContent = 'Keputusan';
   } else if (d?.status === 'playing') {
     status.textContent = 'Permainan sedang berjalan. Masa masih dikira!';
     btn.textContent = 'Sambung';
