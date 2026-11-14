@@ -187,11 +187,6 @@ svg {
   width: 100%;
 }
 
-/* Compact secondary buttons (Papan Markah, Kongsi): shorter, still easy to tap. */
-.btn-sm {
-  min-height: 42px;
-  padding-block: 9px;
-}
 
 .icon-btn {
   width: 44px;
