@@ -21,6 +21,7 @@
   --bad: #d43d4b;
   --sel: #ffd560;
   --same: #ede0f2;
+  --track: #e5d2ec;
   --key: #ffffff;
   --key-ink: #2c1535;
   --key-off: #dac0e5;
@@ -48,6 +49,7 @@
     --gold-2: #f7cd6a;
     --sel: #6b5410;
     --same: #34265a;
+    --track: #2c2240;
     --key: #3a2c55;
     --key-ink: #f1eafc;
     --key-off: #241b38;
@@ -157,10 +159,19 @@ svg {
   box-shadow: 0 2px 0 color-mix(in srgb, var(--gold) 55%, #5a3600);
 }
 
+/* Flat 3D like the other buttons: outlined, on a solid edge in the outline colour. */
 .btn-ghost {
   background: var(--surface);
   color: var(--primary);
-  box-shadow: inset 0 0 0 2px var(--line);
+  box-shadow:
+    inset 0 0 0 2px var(--line),
+    0 4px 0 var(--line);
+}
+
+.btn-ghost:active {
+  box-shadow:
+    inset 0 0 0 2px var(--line),
+    0 2px 0 var(--line);
 }
 
 .btn-link {
@@ -174,6 +185,12 @@ svg {
 
 .btn-wide {
   width: 100%;
+}
+
+/* Compact secondary buttons (Papan Markah, Kongsi): shorter, still easy to tap. */
+.btn-sm {
+  min-height: 42px;
+  padding-block: 9px;
 }
 
 .icon-btn {
@@ -354,9 +371,15 @@ html.in-appswarga #btn-close-app {
   background: linear-gradient(160deg, color-mix(in srgb, var(--gold-2) 30%, var(--surface)), var(--surface) 60%);
 }
 
-/* Same fade as the daily card, in the theme's tint (--same follows the AppsWarga theme). */
+/* Same fade as the daily card, in a neutral grey that doesn't follow the theme. */
 .card-free {
-  background: linear-gradient(160deg, var(--same), var(--surface) 60%);
+  background: linear-gradient(160deg, #e6e8ec, var(--surface) 60%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .card-free {
+    background: linear-gradient(160deg, #34333a, var(--surface) 60%);
+  }
 }
 
 .card-top {
@@ -533,22 +556,61 @@ html.appswarga-fullscreen.aw-close-visible .screen {
 
 .dots {
   display: inline-flex;
-  gap: 6px;
+  gap: 7px;
 }
 
-/* Chances (Peluang): a full green dot per chance left; a lost one empties to an outline. */
+/* Chances (Peluang): flat 3D like the game's buttons and keys — a flat green disc on a
+   solid darker edge. A lost one is pressed down onto its edge and greys out. */
 .dots i {
-  width: 14px;
-  height: 14px;
+  position: relative;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  border: 2px solid var(--ok);
   background: var(--ok);
-  transition: background 0.2s, border-color 0.2s;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--ok) 60%, #000);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
+/* A lost chance: the dot presses down onto its edge and greys out, and a red ✕ (two
+   rounded bars) pops in on top of it. */
 .dots i.lost {
-  background: transparent;
-  border-color: var(--line);
+  background: var(--key-off);
+  box-shadow: 0 0 0 transparent;
+  transform: translateY(3px);
+}
+
+@media (prefers-color-scheme: dark) {
+  /* The used-key grey is nearly the page colour in dark mode; use the lighter key grey. */
+  :root:not([data-theme='light']) .dots i.lost {
+    background: var(--key);
+  }
+}
+
+/* The ✕ in flat 3D: a red ✕ on a darker-red copy 3px lower, its solid edge, like the green
+   dots. Drawn as an image because a rotated bar's shadow would turn with it. The X is
+   centred on the dot; the box is 3px taller below for the edge. */
+.dots i.lost::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 20.5px; /* the 22×25 drawing scaled to 18 wide */
+  /* -3px more: the lost dot is pressed 3px down, so lift the ✕ level with the green dots. */
+  margin: -12px 0 0 -9px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 25' fill='none' stroke-width='4.5' stroke-linecap='round'%3E%3Cpath d='M4 7L18 21M18 7L4 21' stroke='%238a1f2b'/%3E%3Cpath d='M4 4L18 18M18 4L4 18' stroke='%23d43d4b'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  animation: x-pop 0.32s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .dots i.lost::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 25' fill='none' stroke-width='4.5' stroke-linecap='round'%3E%3Cpath d='M4 7L18 21M18 7L4 21' stroke='%23a63542'/%3E%3Cpath d='M4 4L18 18M18 4L4 18' stroke='%23ff6b78'/%3E%3C/svg%3E");
+  }
+}
+
+@keyframes x-pop {
+  from { transform: scale(0); }
 }
 
 .mistakes.bump .dots {
@@ -744,14 +806,27 @@ html.appswarga-fullscreen.aw-close-visible .screen {
 }
 
 /* ---------- result ---------- */
-.screen-result {
-  justify-content: center;
+/* Back button at the top like the other screens; the card is centred in the space below,
+   and never closer than 12px to the button on a short screen. */
+#screen-result .bar {
+  margin-bottom: 12px;
+}
+
+/* An invisible block as tall as the back button row (44px + 12px gap) under the card, so the
+   card sits in the true centre of the screen. Short screens skip it: the card fills them. */
+@media (min-height: 640px) {
+  #screen-result::after {
+    content: '';
+    flex: none;
+    height: 56px;
+  }
 }
 
 .result-card {
+  margin: auto 0;
   background: var(--surface);
   border-radius: 24px;
-  padding: 24px 18px 16px;
+  padding: 24px 18px 18px;
   box-shadow: var(--shadow);
   text-align: center;
   animation: rise 0.4s ease both;
@@ -877,16 +952,36 @@ html.appswarga-fullscreen.aw-close-visible .screen {
 
 /* ---------- leaderboard ---------- */
 .tabs {
+  --tab-index: 0; /* set by setTab() in js/main.js */
+  position: relative;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
-  background: var(--surface-2);
+  /* Its own, clearly darker tint: --surface-2 was nearly the page colour. */
+  background: var(--track);
   padding: 4px;
   border-radius: 14px;
   margin: 14px 0 12px;
 }
 
+/* The selected tab's pill: one element that slides to the chosen tab.
+   Width = one of 3 columns (track minus 4px padding each side and two 4px gaps). */
+.tabs::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 16px) / 3);
+  border-radius: 10px;
+  background: var(--key); /* white in light mode; lighter than the track in dark mode */
+  box-shadow: var(--shadow);
+  transform: translateX(calc(var(--tab-index) * (100% + 4px)));
+  transition: transform 0.28s cubic-bezier(0.3, 0.9, 0.3, 1);
+}
+
 .tabs button {
+  position: relative; /* above the pill */
   border: 0;
   background: none;
   border-radius: 10px;
@@ -895,12 +990,11 @@ html.appswarga-fullscreen.aw-close-visible .screen {
   font-size: 0.85rem;
   color: var(--ink-2);
   min-height: 44px;
+  transition: color 0.2s ease;
 }
 
 .tabs button[aria-selected='true'] {
-  background: var(--surface);
   color: var(--primary);
-  box-shadow: var(--shadow);
 }
 
 .lb-body {

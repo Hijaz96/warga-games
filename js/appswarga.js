@@ -35,6 +35,7 @@ export function paletteFor(theme) {
     '--same': mix(p, '#ffffff', 0.86),
     '--key-ink': mix(p, '#111111', 0.75),
     '--key-off': mix(p, '#ffffff', 0.72),
+    '--track': mix(p, '#ffffff', 0.8),
     '--key-off-ink': mix(p, '#ffffff', 0.42),
   };
 }

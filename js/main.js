@@ -379,9 +379,10 @@ function stopTimer() {
 }
 
 function renderDots() {
-  // Lives left = MAX_MISTAKES - mistakes; lives are lost from the right.
-  const lives = MAX_MISTAKES - session.state.mistakes;
-  [...$('#dots').children].forEach((dot, i) => dot.classList.toggle('lost', i >= lives));
+  // Chances left = MAX_MISTAKES - mistakes; mistakes are marked ✕ from the left.
+  const { mistakes } = session.state;
+  const lives = MAX_MISTAKES - mistakes;
+  [...$('#dots').children].forEach((dot, i) => dot.classList.toggle('lost', i < mistakes));
   $('#mistakes').setAttribute('aria-label', `Peluang ${lives} daripada ${MAX_MISTAKES}`);
 }
 
@@ -581,9 +582,10 @@ function openBoard() {
 
 function setTab(tab) {
   boardTab = tab;
-  for (const b of document.querySelectorAll('.tabs [data-tab]')) {
-    b.setAttribute('aria-selected', String(b.dataset.tab === tab));
-  }
+  const buttons = [...document.querySelectorAll('.tabs [data-tab]')];
+  buttons.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+  // Slides the selected-tab pill (css .tabs::before) to this tab.
+  $('.tabs').style.setProperty('--tab-index', String(buttons.findIndex((b) => b.dataset.tab === tab)));
   loadTab(tab);
 }
 
