@@ -97,6 +97,23 @@ export function closeMiniApp() {
 }
 
 /**
+ * Opens AppsWarga's native share sheet (bridge `share`). Resolves 'shared', 'cancelled', or
+ * null when AppsWarga can't do it (outside the app, or an older build without `share`), so
+ * the caller falls back to the browser's own sharing.
+ */
+export async function appsWargaShare({ text, url, title }) {
+  if (!inAppsWarga()) return null;
+  try {
+    const reply = await window.appswarga.callHandler('share', { text, url, title });
+    if (reply?.status === 'success') return 'shared';
+    if (reply?.code === 'CANCELLED') return 'cancelled';
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Resolves once the bridge is ready, with no time limit (as AppsWarga's own
  * miniapp-bridge-test.html does). The bridge may only arrive when the page finishes loading,
  * fonts and all, which on a phone can take well over a few seconds. Outside AppsWarga it

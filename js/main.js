@@ -17,7 +17,13 @@ import * as lb from './leaderboard.js';
 import { USER_TYPES, CAMPUSES, NON_UITM_CAMPUS, userTypeLabel } from './profile-options.js';
 import { enhanceSelect, refreshSelect, closeSelectSheet } from './select.js';
 import { store, uuid } from './storage.js';
-import { initAppsWarga, appsWargaAllowedUserTypes, appsWargaSessionError, closeMiniApp } from './appswarga.js';
+import {
+  initAppsWarga,
+  appsWargaAllowedUserTypes,
+  appsWargaSessionError,
+  appsWargaShare,
+  closeMiniApp,
+} from './appswarga.js';
 
 const $ = (sel) => document.querySelector(sel);
 const K = { profile: 'tk.profile', daily: 'tk.daily', stats: 'tk.stats', seen: 'tk.freeSeen' };
@@ -254,7 +260,12 @@ function renderProfileChip() {
   const p = loadProfile();
   $('#chip-avatar').textContent = p ? p.nickname.charAt(0).toUpperCase() : '?';
   $('#chip-name').textContent = p ? p.nickname : 'Tetapkan profil';
-  $('#chip-meta').textContent = p ? `${userTypeLabel(p.userType)} · ${p.campus}` : 'Nama, kategori & kampus';
+  // Orang Awam isn't tied to a campus, so their chip shows the category only.
+  $('#chip-meta').textContent = !p
+    ? 'Nama, kategori & kampus'
+    : p.userType === 'awam'
+      ? userTypeLabel(p.userType)
+      : `${userTypeLabel(p.userType)} · ${p.campus}`;
 }
 
 // ---------- home ----------
@@ -275,7 +286,7 @@ function renderHome() {
   if (d?.status === 'done') {
     const r = d.result;
     status.textContent = r.won
-      ? `Selesai dalam ${formatTime(r.seconds)} · ${r.score} mata${r.submit?.rank ? ` · #${r.submit.rank}` : ''}`
+      ? `Selesai dalam ${formatTime(r.seconds)} · ${r.score} mata`
       : 'Tidak berjaya hari ini. Cuba lagi esok!';
     btn.textContent = 'Keputusan';
   } else if (d?.status === 'playing') {
@@ -488,12 +499,8 @@ function renderSubmit() {
     case 'sending':
       return msg('Menghantar markah…', 'busy');
     case 'done':
-      return msg(
-        s.rank
-          ? `Kedudukan #${s.rank} ${r.mode === 'daily' ? 'hari ini' : 'keseluruhan'}`
-          : 'Markah direkodkan.',
-        'ok',
-      );
+      // No rank here: it changes as others play, so it's only on the leaderboard.
+      return msg('Markah direkodkan.', 'ok');
     case 'dup':
       return msg('Markah Cabaran Harian anda sudah direkodkan hari ini.', 'ok');
     case 'error': {
@@ -524,7 +531,7 @@ async function submitResult(r) {
   if (lastResult === r) renderSubmit();
   try {
     const row = await lb.submitScore({ ...p, ...r, date: r.date });
-    r.submit = { status: 'done', rank: row?.rank ?? null };
+    r.submit = { status: 'done' };
     if (typeof row?.score === 'number') r.score = row.score;
     const st = store.get(K.stats, { played: 0, won: 0, best: 0 });
     st.best = Math.max(st.best, r.score);
@@ -549,6 +556,9 @@ async function shareResult() {
     ? `✅ ${formatTime(r.seconds)} · ${r.mistakes} kesilapan · ${r.score} mata`
     : '❌ Tidak berjaya kali ini';
   const url = location.href.split('#')[0];
+  // Inside AppsWarga: its native share sheet (the web view's own sharing is missing on Android).
+  const viaApp = await appsWargaShare({ text: `${head}\n${body}\n${dots}`, url, title: 'Teka Kata UiTM' });
+  if (viaApp) return;
   const text = `${head}\n${body}\n${dots}\n${url}`;
   try {
     if (navigator.share) {
@@ -635,7 +645,17 @@ function rankCell(rank) {
  */
 function totalsList(rows, { showGames = false } = {}) {
   const ol = h('ol', 'lb-list');
+  let prevRank = 0;
   for (const r of rows) {
+    // The board is the top 50 plus the player's own row when they're further down: mark the
+    // jump in rank so their row reads as "your position", not as the next place.
+    if (Number(r.rank) > prevRank + 1) {
+      const gap = h('li', 'lb-gap');
+      gap.setAttribute('aria-hidden', 'true');
+      gap.append(h('span', null, '⋯'));
+      ol.append(gap);
+    }
+    prevRank = Number(r.rank);
     const li = h('li', `lb-row${r.is_me ? ' me' : ''}`);
     const who = h('div', 'lb-who');
     const name = h('div', 'lb-name');
@@ -643,7 +663,7 @@ function totalsList(rows, { showGames = false } = {}) {
     // Time and games first, so a long campus name is what gets cut short. Games as "4x".
     const meta = [`⏱ ${formatDuration(Number(r.total_seconds))}`];
     if (showGames) meta.push(`${r.games}x`);
-    meta.push(r.campus);
+    if (r.user_type !== 'awam') meta.push(r.campus); // Orang Awam: no campus
     who.append(name, h('div', 'lb-meta', meta.join(' · ')));
     li.append(rankCell(Number(r.rank)), who, h('span', 'lb-score', Number(r.total_score).toLocaleString('ms-MY')));
     ol.append(li);

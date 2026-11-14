@@ -354,6 +354,11 @@ html.in-appswarga #btn-close-app {
   background: linear-gradient(160deg, color-mix(in srgb, var(--gold-2) 30%, var(--surface)), var(--surface) 60%);
 }
 
+/* Same fade as the daily card, in the theme's tint (--same follows the AppsWarga theme). */
+.card-free {
+  background: linear-gradient(160deg, var(--same), var(--surface) 60%);
+}
+
 .card-top {
   display: flex;
   flex-direction: column;
@@ -683,7 +688,7 @@ html.appswarga-fullscreen.aw-close-visible .screen {
   /* Extra room under the last row so the keys sit clear of the screen's bottom edge. */
   padding: 10px 6px calc(max(10px, env(safe-area-inset-bottom)) + 14px);
   display: grid;
-  gap: 7px;
+  gap: 10px; /* between key rows */
   border-radius: 20px 20px 0 0;
   box-shadow: 0 -6px 20px -14px rgba(0, 0, 0, 0.4);
   user-select: none;
@@ -925,6 +930,17 @@ html.appswarga-fullscreen.aw-close-visible .screen {
 .lb-row.me {
   box-shadow: inset 0 0 0 2px var(--gold), var(--shadow);
   background: color-mix(in srgb, var(--gold-2) 18%, var(--surface));
+}
+
+/* Between the top of the board and the player's own row further down. */
+.lb-gap {
+  text-align: center;
+  padding: 0 0 4px;
+  color: var(--muted);
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.2em;
 }
 
 .lb-rank {

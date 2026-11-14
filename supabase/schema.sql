@@ -175,8 +175,9 @@ begin
 end;
 $$;
 
--- Hari Ini (p_play_date given) or Keseluruhan (null) board, top p_limit (1–100).
--- player_id never leaves the database; is_me marks the caller's own row.
+-- Hari Ini (p_play_date given) or Keseluruhan (null) board, top p_limit (1–100), plus the
+-- caller's own row (p_player_id) when they're further down, so they can see where they
+-- stand. player_id never leaves the database; is_me marks the caller's row.
 create function public.cg_top_total(
   p_player_id  uuid default null,
   p_play_date  date default null,
@@ -200,8 +201,9 @@ as $$
   select t.rank, t.nickname, t.user_type, t.campus, t.total_score, t.total_seconds, t.games,
          coalesce(t.player_id = p_player_id, false)
   from public.cg_player_totals(p_play_date) t
-  order by t.rank
-  limit least(greatest(coalesce(p_limit, 50), 1), 100);
+  where t.rank <= least(greatest(coalesce(p_limit, 50), 1), 100)
+     or t.player_id = p_player_id
+  order by t.rank;
 $$;
 
 -- Kampus board: campuses by the cumulative points of every round played under them, with
