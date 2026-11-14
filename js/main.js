@@ -20,9 +20,11 @@ import { store, uuid } from './storage.js';
 import {
   initAppsWarga,
   appsWargaAllowedUserTypes,
+  appsWargaHaptic,
   appsWargaSessionError,
   appsWargaShare,
   closeMiniApp,
+  notifyAppReady,
 } from './appswarga.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -400,7 +402,7 @@ function onLetter(letter) {
     $('#mistakes').classList.remove('bump');
     void $('#mistakes').offsetWidth;
     $('#mistakes').classList.add('bump');
-    navigator.vibrate?.(70);
+    appsWargaHaptic('notification', 'error'); // AppsWarga's native "error" buzz
   } else {
     view.update();
     view.pop(idx);
@@ -773,6 +775,8 @@ function init() {
     $('#dlg-help').showModal();
   }
   route();
+  // The first screen is on the page: let AppsWarga drop its loading screen once it's painted.
+  requestAnimationFrame(() => notifyAppReady());
 }
 
 init();

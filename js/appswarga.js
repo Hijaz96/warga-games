@@ -98,6 +98,30 @@ export function closeMiniApp() {
 }
 
 /**
+ * Tells AppsWarga the first screen is drawn, so it takes its loading screen down now
+ * instead of 3 s after the page finishes loading (bridge v3 `ready`). Waits for the bridge
+ * if it isn't there yet; outside AppsWarga it does nothing. An older AppsWarga has no
+ * `notifyReady`, and answers `ready` with UNKNOWN_HANDLER, which is harmless.
+ */
+export function notifyAppReady() {
+  const send = () => {
+    const bridge = window.appswarga;
+    if (typeof bridge?.notifyReady === 'function') bridge.notifyReady();
+    else bridge?.callHandler?.('ready');
+  };
+  if (inAppsWarga()) send();
+  else window.addEventListener('appswargaReady', send, { once: true });
+}
+
+/**
+ * A native vibration through AppsWarga (bridge v3 `haptic`), e.g. ('notification', 'error').
+ * Does nothing outside AppsWarga; an older build answers UNKNOWN_HANDLER, which is harmless.
+ */
+export function appsWargaHaptic(type, style) {
+  if (inAppsWarga()) window.appswarga.callHandler('haptic', style ? { type, style } : { type });
+}
+
+/**
  * Opens AppsWarga's native share sheet (bridge `share`). Resolves 'shared', 'cancelled', or
  * null when AppsWarga can't do it (outside the app, or an older build without `share`), so
  * the caller falls back to the browser's own sharing.
