@@ -173,7 +173,7 @@ html.from-arked .profile-chip {
 .ul-board {
   position: relative;
   border-radius: 14px;
-  background: var(--surface);
+  background: var(--bg);
   box-shadow: var(--shadow);
   /* Walls off: a soft edge. */
   border: 3px solid var(--track);
@@ -219,17 +219,17 @@ html.from-arked .profile-chip {
   min-width: 140px;
 }
 
-/* D-pad: a cross of flat-3D keys (like Teka Kata's keyboard), under the board. */
+/* D-pad: flat-3D keys (like Teka Kata's keyboard) under the board, laid out like a keyboard's
+   arrow keys: up on top, then left, down, right. */
 .dpad {
   flex: none;
   display: grid;
   grid-template-columns: repeat(3, 64px);
-  grid-template-rows: repeat(3, 58px);
+  grid-template-rows: repeat(2, 58px);
   grid-template-areas:
     '. up .'
-    'left . right'
-    '. down .';
-  gap: 4px 10px;
+    'left down right';
+  gap: 8px 10px;
   justify-content: center;
   padding-bottom: 6px;
   touch-action: manipulation;
@@ -428,6 +428,6 @@ html.from-arked .profile-chip {
 @media (max-height: 700px) {
   .dpad {
     grid-template-columns: repeat(3, 56px);
-    grid-template-rows: repeat(3, 48px);
+    grid-template-rows: repeat(2, 48px);
   }
 }

@@ -276,12 +276,12 @@ function draw() {
   const { state } = game;
   const c = cellPx;
   const n = state.size;
-  // A faint checkerboard so the player can judge distances.
-  ctx.fillStyle = color('--surface');
+  // A checkerboard in two close shades of the page background (no white squares).
+  ctx.fillStyle = color('--bg');
   ctx.fillRect(0, 0, c * n, c * n);
-  ctx.fillStyle = color('--bg-2');
+  ctx.fillStyle = color('--surface-2');
   for (let y = 0; y < n; y++) {
-    for (let x = (y % 2); x < n; x += 2) ctx.fillRect(x * c, y * c, c, c);
+    for (let x = y % 2; x < n; x += 2) ctx.fillRect(x * c, y * c, c, c);
   }
   // Food: a gold dot.
   if (state.food) {
@@ -290,7 +290,7 @@ function draw() {
     ctx.arc(state.food.x * c + c / 2, state.food.y * c + c / 2, c * 0.38, 0, Math.PI * 2);
     ctx.fill();
   }
-  // Snake: body in the theme's second colour, head in the main one, with eyes.
+  // Snake: body in the theme's second colour, head in the main one (red once it crashes).
   const dead = state.status === 'dead';
   const pad = Math.max(1, c * 0.08);
   state.snake.forEach((cell, i) => {
@@ -298,16 +298,6 @@ function draw() {
     roundRect(ctx, cell.x * c + pad, cell.y * c + pad, c - pad * 2, c - pad * 2, c * 0.28);
     ctx.fill();
   });
-  const head = state.snake[0];
-  const [dx, dy] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[state.dir];
-  ctx.fillStyle = '#fff';
-  for (const side of [-1, 1]) {
-    const ex = head.x * c + c / 2 + dx * c * 0.18 + -dy * side * c * 0.2;
-    const ey = head.y * c + c / 2 + dy * c * 0.18 + dx * side * c * 0.2;
-    ctx.beginPath();
-    ctx.arc(ex, ey, Math.max(1.5, c * 0.1), 0, Math.PI * 2);
-    ctx.fill();
-  }
 }
 
 // ---------- input ----------
