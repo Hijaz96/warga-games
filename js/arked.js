@@ -1,4 +1,4 @@
-// Opened from Arked Warga, the game hub (https://nullifye.github.io/arked/): the hub opens
+// Opened from Arked Warga, the game hub (https://nullifye.github.io/arcade/): the hub opens
 // games with ?dari=arked, and the home screen then shows ‹ (back to Arked) instead of ✕.
 //
 // Going back walks the browser history to the hub's page, so the hub comes back as it was.
@@ -10,7 +10,7 @@ const FLAG = 'tk.fromArked'; // sessionStorage: { base } = history index of the 
 
 /** The hub's address; on a local dev server (tools/dev-server.mjs in arked), the local copy. */
 export function hubUrl(here = location) {
-  return here.hostname === HUB_HOST ? `https://${HUB_HOST}/arked/` : `${here.origin}/arked/`;
+  return here.hostname === HUB_HOST ? `https://${HUB_HOST}/arcade/` : `${here.origin}/arcade/`;
 }
 
 const session = {
@@ -55,7 +55,7 @@ export function cameFromHub(referrer = document.referrer) {
   }
   if (ref.hostname === 'localhost' || ref.hostname === '127.0.0.1') return true;
   // Across sites the browser sends only the origin; on the same site, the full address.
-  return ref.hostname === HUB_HOST && (ref.pathname === '/' || ref.pathname.startsWith('/arked/'));
+  return ref.hostname === HUB_HOST && (ref.pathname === '/' || ref.pathname.startsWith('/arcade/'));
 }
 
 /** Call once on load. Returns true when the game was opened from Arked Warga. */
