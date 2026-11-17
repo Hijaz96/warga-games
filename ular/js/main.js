@@ -98,8 +98,8 @@ function renderSettings() {
   const s = settings();
   $('#set-walls').setAttribute('aria-checked', String(s.walls));
   $('#set-walls-hint').textContent = s.walls
-    ? `Langgar tepi = tamat · ${POINTS.walls} mata setiap makanan`
-    : `Ular keluar di sebelah bertentangan · ${POINTS.open} mata`;
+    ? `Langgar tepi, tamat · ${POINTS.walls} mata`
+    : `Tembus ke sisi lain · ${POINTS.open} mata`;
   $('#set-dpad').setAttribute('aria-checked', String(s.dpad));
   $('#set-dpad-hint').textContent = s.dpad ? 'Butang arah di skrin' : 'Leret pada papan sahaja';
 }
@@ -149,7 +149,7 @@ function pause() {
   if (game?.phase !== 'running') return;
   game.phase = 'paused';
   cancelAnimationFrame(rafId);
-  overlay('Rehat', 'Sambung', start, true);
+  overlay('Rehat', 'Sambung', start); // ‹ at the top leaves the game
 }
 
 function stopGame() {
@@ -158,7 +158,7 @@ function stopGame() {
   game = null;
 }
 
-function overlay(text, button, onClick, withQuit = false) {
+function overlay(text, button, onClick) {
   const box = $('#overlay');
   box.hidden = !text;
   if (!text) return;
@@ -166,7 +166,6 @@ function overlay(text, button, onClick, withQuit = false) {
   const btn = $('#overlay-btn');
   btn.textContent = button;
   btn.onclick = onClick;
-  $('#overlay-quit').hidden = !withQuit;
 }
 
 /** Fixed-step loop: the snake moves every stepMs(foods) ms, whatever the frame rate. */
@@ -535,7 +534,6 @@ function init() {
 
   $('#btn-quit').addEventListener('click', () => go(''));
   $('#btn-pause').addEventListener('click', () => (game?.phase === 'running' ? pause() : start()));
-  $('#overlay-quit').addEventListener('click', () => go(''));
   initDpad();
   initSwipe();
   document.addEventListener('keydown', onKey);

@@ -54,7 +54,7 @@
         <button type="button" class="switch-row" id="set-walls" role="switch" aria-checked="true">
           <span class="switch-text">
             <strong>Dinding</strong>
-            <small id="set-walls-hint">Langgar tepi = tamat · 15 mata setiap makanan</small>
+            <small id="set-walls-hint">Langgar tepi, tamat · 15 mata</small>
           </span>
           <span class="switch" aria-hidden="true"></span>
         </button>
@@ -95,9 +95,7 @@
           <canvas id="board" aria-label="Papan permainan ular"></canvas>
           <div class="ul-overlay" id="overlay" hidden>
             <p id="overlay-text"></p>
-            <button type="button" class="btn btn-gold" id="overlay-btn"></button>
-            <button type="button" class="btn btn-link" id="overlay-quit" hidden>Keluar</button>
-          </div>
+            <button type="button" class="btn btn-gold" id="overlay-btn"></button>          </div>
         </div>
       </div>
       <div class="dpad" id="dpad" aria-label="Arah">
@@ -190,7 +188,7 @@
       <li>Gerakkan ular untuk <b>makan</b>. Setiap makanan memanjangkan ular dan menambah kelajuan.</li>
       <li>Tukar arah dengan <b>D-pad</b>, <b>leret</b> pada papan, atau kekunci anak panah / WASD.</li>
       <li>Langgar badan sendiri = <b>tamat</b>.</li>
-      <li><b>Dinding</b> hidup: langgar tepi = tamat, <b>15 mata</b> setiap makanan. Dinding mati: ular keluar di sebelah bertentangan, <b>10 mata</b>.</li>
+      <li><b>Dinding</b> hidup: langgar tepi, tamat, <b>15 mata</b> setiap makanan. Dinding mati: ular tembus ke sisi lain, <b>10 mata</b>.</li>
       <li>Markah dikumpulkan di papan markah dan Arked Warga.</li>
     </ol>
     <div class="dialog-actions">
