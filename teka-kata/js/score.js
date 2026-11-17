@@ -1,5 +1,5 @@
-// Scoring. Must stay identical to public.cg_compute_score in supabase/schema.sql,
-// which is the source of truth for the leaderboard. Integer maths only, so JS and SQL agree.
+// Scoring. The score is sent to arked_record (hub repo, supabase/arked.sql), which caps it with
+// teka-kata's max_points / max_points_per_sec; keep those in step if the formula changes.
 
 /** Score multiplier (percent) for 0, 1 and 2 mistakes. Three mistakes ends the game. */
 export const MISTAKE_PCT = [100, 70, 40];

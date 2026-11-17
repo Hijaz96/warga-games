@@ -1,6 +1,5 @@
-// Boards for any game in Arked Warga, from Supabase (arcade repo: supabase/arked.sql), over
+// Boards for every game in Arked Warga, from Supabase (arcade repo: supabase/arked.sql), over
 // plain fetch: recording a round, and the Hari Ini / Keseluruhan / Kampus lists.
-// (Teka Kata keeps its own cg_* boards in teka-kata/js/leaderboard.js.)
 import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
 import { userTypeLabel } from './profile-options.js';
 
@@ -33,8 +32,12 @@ export async function rpc(name, body, fetchImpl = globalThis.fetch) {
   return data;
 }
 
-/** Records one finished round for `game` with the player's profile. */
-export const recordRound = ({ game, profile, points, seconds }, fetchImpl) =>
+/**
+ * Records one finished round for `game` with the player's profile. `daily`: a daily challenge
+ * round (one per player and day; a second one fails with code '23505'). `date`: the round's day
+ * (YYYY-MM-DD, Malaysia), or null for today.
+ */
+export const recordRound = ({ game, profile, points, seconds, daily = false, date = null }, fetchImpl) =>
   rpc(
     'arked_record',
     {
@@ -45,6 +48,8 @@ export const recordRound = ({ game, profile, points, seconds }, fetchImpl) =>
       p_nickname: profile.nickname,
       p_user_type: profile.userType,
       p_campus: profile.campus,
+      p_daily: daily,
+      p_play_date: date,
     },
     fetchImpl,
   );

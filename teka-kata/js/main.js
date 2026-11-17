@@ -13,7 +13,7 @@ import {
 import { mulberry32, hashString, randomSeed, todayKL } from './rng.js';
 import { computeScore, formatTime } from './score.js';
 import { BoardView } from './board.js';
-import * as lb from './leaderboard.js';
+import * as lb from '../../shared/leaderboard.js';
 import { USER_TYPES, CAMPUSES, NON_UITM_CAMPUS, userTypeLabel } from '../../shared/profile-options.js';
 import { enhanceSelect, refreshSelect, closeSelectSheet } from '../../shared/select.js';
 import { store, uuid } from './storage.js';
@@ -33,7 +33,8 @@ const $ = (sel) => document.querySelector(sel);
 // The profile is shared with Arked Warga and its other games (js/shared-store.js); the rest is
 // Teka Kata's own. 'tk.profile' is where the profile was kept before Arked Warga.
 const K = { daily: 'tk.daily', stats: 'tk.stats', seen: 'tk.freeSeen' };
-const PROGRESS_KEY = gameKey('teka-kata');
+const GAME_ID = 'teka-kata';
+const PROGRESS_KEY = gameKey(GAME_ID);
 const SCREENS = ['home', 'game', 'result', 'board'];
 
 let session = null; // { mode, date, phrase, state, startedAt }
@@ -540,7 +541,7 @@ function renderSubmit() {
 
 async function submitResult(r) {
   if (!r.won || submitting) return;
-  if (!lb.isConfigured()) {
+  if (!lb.boardsConfigured()) {
     r.submit = { status: 'offline' };
     saveResult(r);
     if (lastResult === r) renderSubmit();
@@ -552,9 +553,15 @@ async function submitResult(r) {
   r.submit = { status: 'sending' };
   if (lastResult === r) renderSubmit();
   try {
-    const row = await lb.submitScore({ ...p, ...r, date: r.date });
+    await lb.recordRound({
+      game: GAME_ID,
+      profile: p,
+      points: r.score,
+      seconds: r.seconds,
+      daily: r.mode === 'daily',
+      date: r.date,
+    });
     r.submit = { status: 'done' };
-    if (typeof row?.score === 'number') r.score = row.score;
     const st = store.get(K.stats, { played: 0, won: 0, best: 0 });
     st.best = Math.max(st.best, r.score);
     store.set(K.stats, st);
@@ -632,91 +639,29 @@ async function loadTab(tab) {
       : tab === 'alltime'
         ? 'Jumlah markah & masa bermain'
         : 'Jumlah markah semua pemain kampus';
-  if (!lb.isConfigured()) {
-    boardMessage('Papan markah belum dikonfigurasi. Lihat README untuk menyambung Supabase.');
+  if (!lb.boardsConfigured()) {
+    boardMessage('Papan markah belum dikonfigurasi.');
     return;
   }
   const body = $('#lb-body');
   body.replaceChildren(h('div', 'lb-loading', 'Memuatkan…'));
-  const playerId = loadProfile()?.playerId;
+  const profile = loadProfile();
   try {
     const rows =
-      tab === 'daily'
-        ? await lb.topDaily(date, playerId)
-        : tab === 'alltime'
-          ? await lb.topAllTime(playerId)
-          : await lb.campusRanking();
+      tab === 'campus'
+        ? await lb.topCampuses(GAME_ID)
+        : await lb.topPlayers(GAME_ID, profile?.playerId, tab === 'daily' ? date : null);
     if (boardTab !== tab) return; // user switched tabs meanwhile
     if (!rows?.length) {
       boardMessage(tab === 'daily' ? 'Belum ada markah hari ini. Jadilah yang pertama!' : 'Belum ada markah.');
       return;
     }
-    body.replaceChildren(tab === 'campus' ? campusList(rows) : totalsList(rows, { showGames: tab === 'daily' }));
+    body.replaceChildren(
+      tab === 'campus' ? lb.campusList(rows, profile?.campus) : lb.playersList(rows, { showPlays: tab === 'daily' }),
+    );
   } catch (err) {
     if (boardTab === tab) boardMessage(`Gagal memuatkan: ${err.message}`, () => loadTab(tab));
   }
-}
-
-function rankCell(rank) {
-  const medal = { 1: '🥇', 2: '🥈', 3: '🥉' }[rank];
-  return h('span', `lb-rank${medal ? ' medal' : ''}`, medal ?? String(rank));
-}
-
-/**
- * Hari Ini / Keseluruhan: cumulative points, with total play time and campus under the name.
- * The games played ("4x") only shows when `showGames` (Hari Ini).
- */
-function totalsList(rows, { showGames = false } = {}) {
-  const ol = h('ol', 'lb-list');
-  let prevRank = 0;
-  for (const r of rows) {
-    // The board is the top 50 plus the player's own row when they're further down: mark the
-    // jump in rank so their row reads as "your position", not as the next place.
-    if (Number(r.rank) > prevRank + 1) {
-      const gap = h('li', 'lb-gap');
-      gap.setAttribute('aria-hidden', 'true');
-      gap.append(h('span', null, '⋯'));
-      ol.append(gap);
-    }
-    prevRank = Number(r.rank);
-    const li = h('li', `lb-row${r.is_me ? ' me' : ''}`);
-    const who = h('div', 'lb-who');
-    const name = h('div', 'lb-name');
-    name.append(h('span', null, r.nickname), h('span', `badge badge-${r.user_type}`, userTypeLabel(r.user_type)));
-    // Time and games first, so a long campus name is what gets cut short. Games as "4x".
-    const meta = [`⏱ ${formatDuration(Number(r.total_seconds))}`];
-    if (showGames) meta.push(`${r.games}x`);
-    if (r.user_type !== 'awam') meta.push(r.campus); // Orang Awam: no campus
-    who.append(name, h('div', 'lb-meta', meta.join(' · ')));
-    li.append(rankCell(Number(r.rank)), who, h('span', 'lb-score', Number(r.total_score).toLocaleString('ms-MY')));
-    ol.append(li);
-  }
-  return ol;
-}
-
-/** Total play time: "45s", "12m 30s", "3j 05m". */
-function formatDuration(totalSeconds) {
-  const s = Math.max(0, Math.floor(totalSeconds));
-  const hrs = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  if (hrs) return `${hrs}j ${String(m).padStart(2, '0')}m`;
-  if (m) return `${m}m ${String(s % 60).padStart(2, '0')}s`;
-  return `${s}s`;
-}
-
-/** Kampus: cumulative points of all the campus's games, with play time and players. */
-function campusList(rows) {
-  const myCampus = loadProfile()?.campus;
-  const ol = h('ol', 'lb-list');
-  for (const r of rows) {
-    const li = h('li', `lb-row${r.campus === myCampus ? ' me' : ''}`);
-    const who = h('div', 'lb-who');
-    const meta = `⏱ ${formatDuration(Number(r.total_seconds))} · ${r.players} pemain`;
-    who.append(h('div', 'lb-name', r.campus), h('div', 'lb-meta', meta));
-    li.append(rankCell(Number(r.rank)), who, h('span', 'lb-score', Number(r.total_score).toLocaleString('ms-MY')));
-    ol.append(li);
-  }
-  return ol;
 }
 
 // ---------- wiring ----------

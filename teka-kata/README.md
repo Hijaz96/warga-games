@@ -26,19 +26,15 @@ ES modules need to be served over HTTP; opening `index.html` from the file syste
 The game plays fully offline. Until `../shared/config.js` is filled in, the leaderboard shows
 “Papan markah belum dikonfigurasi”.
 
-1. Create a new Supabase project (region **ap-southeast-1 / Singapore** is closest to Malaysia).
-2. Open **SQL Editor**, paste all of [`supabase/schema.sql`](supabase/schema.sql) and run it.
-   It creates the `cg_scores` table and the `cg_submit`, `cg_top_total` and `cg_campus_rank` functions.
-   The script is safe to re-run.
-3. In **Project Settings → API**, copy the **Project URL** and the **publishable key**
-   (`sb_publishable_…`; a legacy `anon` key also works) into [`shared/config.js`](../shared/config.js).
-4. Commit and push.
+Teka Kata uses the same boards as every Arked Warga game (`shared/leaderboard.js`):
+`arked_record` for each won round (`daily: true` for the Cabaran Harian), and `arked_top` /
+`arked_campus_rank` for Hari Ini, Keseluruhan and Kampus. The SQL is in the hub repo
+(`nullifye/arcade`, `supabase/arked.sql`).
 
-The publishable key is meant to be public. The table has RLS on with no policies, so the browser can
-only call the three `cg_*` functions. Scores are computed in the database from time and mistakes, and
-the function rejects impossible times, a second daily entry per player, and submissions less than 10 s apart.
-The timer still runs in the browser, so a determined cheater can fake their time. That's an
-acceptable trade-off for a casual game.
+The database allows one Cabaran Harian round per player per day, at most 10,000 points and 260
+points a second per round, and one round every 10 s. The score is worked out in the browser
+(`js/score.js`) and the timer runs there too, so a determined cheater could fake them; those
+limits bound it. That's an acceptable trade-off for a casual game.
 
 ## Deploy
 
@@ -51,8 +47,8 @@ H      = blank letter cells at the start
 score  = round_half_up((H*50 + max(0, H*8 - seconds)*10) * [100%, 70%, 40%][mistakes])
 ```
 
-- Ranking is by score, then by time.
-- `js/score.js` and `public.cg_compute_score` in the schema must stay identical. A unit test pins the formula.
+- Boards rank by total points, then by less time.
+- If the formula changes, check `teka-kata`'s limits in `arked.sql` (`max_points`, `max_points_per_sec`).
 
 ## Editing content
 
@@ -61,7 +57,7 @@ score  = round_half_up((H*50 + max(0, H*8 - seconds)*10) * [100%, 70%, 40%][mist
   - Only A–Z are encrypted; digits and punctuation are shown as-is.
   - Adding or removing phrases reshuffles the daily-challenge order.
 - **Campuses and user types:** [`shared/profile-options.js`](../shared/profile-options.js).
-  - If you add a user type, also update the `user_type` check in the schema.
+  - If you add a user type, also update the `user_type` checks in `arked.sql`.
 
 ## How it works
 
@@ -71,7 +67,6 @@ score  = round_half_up((H*50 + max(0, H*8 - seconds)*10) * [100%, 70%, 40%][mist
 | `js/rng.js` | Seeded PRNG, so everyone gets the same daily puzzle (Malaysia time) |
 | `js/board.js` | Puzzle grid + keyboard rendering and animations |
 | `js/main.js` | Hash router (`#/`, `#/harian`, `#/bebas`, `#/keputusan`, `#/papan`), profile, results, leaderboard |
-| `js/leaderboard.js` | Supabase RPC calls via `fetch` |
 
 - **Daily progress:** stored in `localStorage`, so a reload resumes the same puzzle with the clock still running.
 - **Player identity:** a random `playerId` is stored in `localStorage`. It is never shown on the leaderboard.

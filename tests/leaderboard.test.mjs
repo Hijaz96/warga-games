@@ -22,7 +22,11 @@ test('recordRound sends the round with the profile', async () => {
   assert.deepEqual(f.calls[0].body, {
     p_player_id: profile.playerId, p_game: 'ular', p_points: 150, p_seconds: 42,
     p_nickname: 'Siti', p_user_type: 'pelajar', p_campus: 'UiTM Arau',
+    p_daily: false, p_play_date: null,
   });
+  await recordRound({ game: 'teka-kata', profile, points: 820, seconds: 95, daily: true, date: '2026-11-17' }, f);
+  assert.equal(f.calls[1].body.p_daily, true);
+  assert.equal(f.calls[1].body.p_play_date, '2026-11-17');
   assert.ok(f.calls[0].headers.apikey.startsWith('sb_publishable_'));
   assert.ok(SUPABASE_URL.startsWith('https://'));
 });

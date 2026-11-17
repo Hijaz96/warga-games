@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { computeScore, formatTime } from '../js/score.js';
 
-// Reference values computed by hand from the formula in supabase/schema.sql:
+// Reference values computed by hand from the formula (see README, Scoring):
 // ((hidden*50 + max(0, hidden*8 - seconds)*10) * pct + 50) / 100, integer division.
 test('score matches the SQL formula', () => {
   assert.equal(computeScore(20, 100, 0), 1600); // 1000 + 60*10
@@ -35,4 +35,21 @@ test('formatTime', () => {
   assert.equal(formatTime(0), '0:00');
   assert.equal(formatTime(65), '1:05');
   assert.equal(formatTime(600), '10:00');
+});
+
+// arked_record caps teka-kata rounds (hub repo, supabase/arked.sql: arked_games). Any real
+// round must pass: at most 10,000 points, and 260 points a second even at half a second a letter.
+test('every phrase scores within the server limits', async () => {
+  const { PHRASES } = await import('../js/phrases.js');
+  const { createPuzzle } = await import('../js/game.js');
+  const { mulberry32 } = await import('../js/rng.js');
+  for (const p of PHRASES) {
+    for (let seed = 1; seed <= 20; seed++) {
+      const h = createPuzzle(p.text, mulberry32(seed)).hiddenCount;
+      const fastest = Math.ceil(h / 2);
+      const best = computeScore(h, fastest, 0);
+      assert.ok(best <= 10000, `${p.id}: ${best} points`);
+      assert.ok(best <= fastest * 260, `${p.id}: ${best} points in ${fastest}s`);
+    }
+  }
 });
