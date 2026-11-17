@@ -18,6 +18,10 @@
     <!-- Laman utama -->
     <section id="screen-home" class="screen screen-home" hidden>
       <header class="home-head">
+        <!-- Only when opened from Arked Warga (html.from-arked): back to the game hub. -->
+        <button type="button" class="icon-btn" id="btn-hub" aria-label="Kembali ke Arked Warga">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
         <button type="button" class="profile-chip" id="profile-chip">
           <span class="avatar" id="chip-avatar" aria-hidden="true">?</span>
           <span class="chip-text">
@@ -27,7 +31,7 @@
         </button>
         <div class="head-actions">
           <button type="button" class="icon-btn" id="btn-help" aria-label="Cara bermain">?</button>
-          <!-- Only inside AppsWarga (html.in-appswarga): leaves the mini-app. -->
+          <!-- Only inside AppsWarga (html.in-appswarga), unless opened from Arked Warga: leaves the mini-app. -->
           <button type="button" class="icon-btn" id="btn-close-app" aria-label="Tutup permainan">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
           </button>
@@ -72,7 +76,7 @@
         <div><dt>Markah terbaik</dt><dd id="st-best">0</dd></div>
       </dl>
 
-      <button type="button" class="app-version" id="btn-version" aria-label="Versi 1.3. Ketik untuk muat semula permainan.">Versi 1.3</button>
+      <button type="button" class="app-version" id="btn-version" aria-label="Versi 1.4. Ketik untuk muat semula permainan.">Versi 1.4</button>
     </section>
 
     <!-- Permainan -->

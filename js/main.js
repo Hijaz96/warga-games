@@ -17,6 +17,8 @@ import * as lb from './leaderboard.js';
 import { USER_TYPES, CAMPUSES, NON_UITM_CAMPUS, userTypeLabel } from './profile-options.js';
 import { enhanceSelect, refreshSelect, closeSelectSheet } from './select.js';
 import { store, uuid } from './storage.js';
+import { PROFILE_KEY, gameKey, migrateLocal, readShared, syncShared, writeShared } from './shared-store.js';
+import { initFromArked, backToArked, shareUrl } from './arked.js';
 import {
   initAppsWarga,
   appsWargaAllowedUserTypes,
@@ -28,7 +30,10 @@ import {
 } from './appswarga.js';
 
 const $ = (sel) => document.querySelector(sel);
-const K = { profile: 'tk.profile', daily: 'tk.daily', stats: 'tk.stats', seen: 'tk.freeSeen' };
+// The profile is shared with Arked Warga and its other games (js/shared-store.js); the rest is
+// Teka Kata's own. 'tk.profile' is where the profile was kept before Arked Warga.
+const K = { daily: 'tk.daily', stats: 'tk.stats', seen: 'tk.freeSeen' };
+const PROGRESS_KEY = gameKey('teka-kata');
 const SCREENS = ['home', 'game', 'result', 'board'];
 
 let session = null; // { mode, date, phrase, state, startedAt }
@@ -97,7 +102,7 @@ async function hardReload() {
   location.reload();
 }
 
-const loadProfile = () => store.get(K.profile);
+const loadProfile = () => readShared(PROFILE_KEY);
 const elapsedSeconds = () => Math.max(1, Math.round((Date.now() - session.startedAt) / 1000));
 const modeLabel = (mode) => (mode === 'daily' ? 'Cabaran Harian' : 'Main Bebas');
 
@@ -182,7 +187,7 @@ async function syncUserTypeFromApp() {
   appAllowedTypes = allowed;
   const p = loadProfile();
   if (p && !allowed.includes(p.userType)) {
-    store.set(K.profile, { ...p, userType: fallbackType(allowed) });
+    writeShared(PROFILE_KEY, { ...p, userType: fallbackType(allowed) });
     renderProfileChip();
   }
   applyUserTypeRules();
@@ -242,7 +247,7 @@ function saveProfileFromForm(e) {
   }
   if (!campus) return void ($('#pf-error').textContent = 'Sila pilih kampus.');
   const prev = loadProfile();
-  store.set(K.profile, { playerId: prev?.playerId ?? uuid(), nickname: nickname.slice(0, 20), userType, campus });
+  writeShared(PROFILE_KEY, { playerId: prev?.playerId ?? uuid(), nickname: nickname.slice(0, 20), userType, campus });
   $('#dlg-profile').close('saved');
   renderProfileChip();
   const next = afterProfile;
@@ -306,6 +311,17 @@ function renderHome() {
 
 // ---------- game ----------
 
+/**
+ * Tells Arked Warga what was played (arked.game.teka-kata): when, and today's Cabaran Harian
+ * status. `daily` undefined keeps today's status as it is.
+ */
+function recordProgress(daily) {
+  const prev = readShared(PROGRESS_KEY);
+  const today = todayKL();
+  const keep = prev?.daily?.date === today ? prev.daily : null;
+  writeShared(PROGRESS_KEY, { lastPlayedAt: Date.now(), daily: daily === undefined ? keep : daily });
+}
+
 function startDaily() {
   const date = todayKL();
   const phrase = PHRASES[dailyIndex(date, PHRASES.length)];
@@ -324,6 +340,7 @@ function startDaily() {
   beginSession();
   if (state.status !== 'playing') return finish();
   persistDaily();
+  recordProgress({ date, status: 'playing' });
 }
 
 function pickFreePhrase() {
@@ -343,6 +360,7 @@ function startFree() {
   const state = createPuzzle(phrase.text, mulberry32(randomSeed()));
   session = { mode: 'free', date: todayKL(), phrase, state, startedAt: Date.now() };
   beginSession();
+  recordProgress();
 }
 
 function beginSession() {
@@ -436,6 +454,7 @@ async function finish() {
   lastResult = result;
   saveResult(result);
   recordStats(result);
+  recordProgress(mode === 'daily' ? { date, status: 'done', won, score: result.score } : undefined);
   // The answer stays secret on a loss, so let that phrase come up again in free play.
   if (!won && mode === 'free') store.set(K.seen, store.get(K.seen, []).filter((id) => id !== phrase.id));
   $('#timer').textContent = formatTime(seconds);
@@ -558,7 +577,7 @@ async function shareResult() {
   const body = r.won
     ? `✅ ${formatTime(r.seconds)} · ${r.mistakes} kesilapan · ${r.score} mata`
     : '❌ Tidak berjaya kali ini';
-  const url = location.href.split('#')[0];
+  const url = shareUrl();
   // Inside AppsWarga: its native share sheet (the web view's own sharing is missing on Android).
   const viaApp = await appsWargaShare({ text: `${head}\n${body}\n${dots}`, url, title: 'Teka Kata UiTM' });
   if (viaApp) return;
@@ -703,7 +722,14 @@ function campusList(rows) {
 // ---------- wiring ----------
 
 function init() {
+  // Players from before Arked Warga keep their profile and player id (and so their scores).
+  migrateLocal('tk.profile', PROFILE_KEY);
+  initFromArked();
   initAppsWarga();
+  // In AppsWarga, the profile set in Arked Warga (perhaps on another site) wins.
+  syncShared([PROFILE_KEY, PROGRESS_KEY], (key) => {
+    if (key === PROFILE_KEY && document.body.dataset.screen === 'home') renderProfileChip();
+  });
   syncUserTypeFromApp();
   fillProfileOptions();
   enhanceSelect($('#pf-type'));
@@ -728,6 +754,7 @@ function init() {
 
   $('#btn-help').addEventListener('click', () => $('#dlg-help').showModal());
   $('#btn-close-app').addEventListener('click', closeMiniApp);
+  $('#btn-hub').addEventListener('click', backToArked);
   $('#help-close').addEventListener('click', () => $('#dlg-help').close());
 
   $('#btn-daily').addEventListener('click', () => go('harian'));

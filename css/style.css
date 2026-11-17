@@ -231,6 +231,25 @@ html.in-appswarga #btn-close-app {
   display: grid;
 }
 
+/* Opened from Arked Warga (js/arked.js): ‹ back to the hub on the left, and no ✕ (people
+   leave AppsWarga from the hub). */
+#btn-hub {
+  display: none;
+}
+
+html.from-arked #btn-hub {
+  display: grid;
+}
+
+html.from-arked #btn-close-app {
+  display: none;
+}
+
+/* The chip takes the space between ‹ and the buttons on the right. */
+html.from-arked .profile-chip {
+  margin-right: auto;
+}
+
 .profile-chip {
   display: flex;
   align-items: center;
