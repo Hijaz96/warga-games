@@ -13,7 +13,7 @@ import {
   dailyIndex,
   MAX_MISTAKES,
 } from '../js/game.js';
-import { mulberry32, hashString, todayKL } from '../js/rng.js';
+import { mulberry32, hashString, todayKL } from '../../shared/rng.js';
 import { PHRASES } from '../js/phrases.js';
 
 const PHRASE = 'Berat sama dipikul, ringan sama dijinjing';

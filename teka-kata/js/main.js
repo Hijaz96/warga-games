@@ -10,7 +10,7 @@ import {
   dailyIndex,
   MAX_MISTAKES,
 } from './game.js';
-import { mulberry32, hashString, randomSeed, todayKL } from './rng.js';
+import { mulberry32, hashString, randomSeed, todayKL } from '../../shared/rng.js';
 import { computeScore, formatTime } from './score.js';
 import { BoardView } from './board.js';
 import * as lb from '../../shared/leaderboard.js';
@@ -580,13 +580,13 @@ async function submitResult(r) {
 async function shareResult() {
   const r = lastResult;
   const dots = '🟥'.repeat(r.mistakes) + '🟩'.repeat(MAX_MISTAKES - r.mistakes);
-  const head = r.mode === 'daily' ? `Teka Kata UiTM · Cabaran Harian ${r.date}` : 'Teka Kata UiTM · Main Bebas';
+  const head = r.mode === 'daily' ? `Teka Kata · Cabaran Harian ${r.date}` : 'Teka Kata · Main Bebas';
   const body = r.won
     ? `✅ ${formatTime(r.seconds)} · ${r.mistakes} kesilapan · ${r.score} mata`
     : '❌ Tidak berjaya kali ini';
   const url = shareUrl();
   // Inside AppsWarga: its native share sheet (the web view's own sharing is missing on Android).
-  const viaApp = await appsWargaShare({ text: `${head}\n${body}\n${dots}`, url, title: 'Teka Kata UiTM' });
+  const viaApp = await appsWargaShare({ text: `${head}\n${body}\n${dots}`, url, title: 'Teka Kata' });
   if (viaApp) return;
   const text = `${head}\n${body}\n${dots}\n${url}`;
   try {

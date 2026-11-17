@@ -5,7 +5,7 @@ AppsWarga app (hub repo: `nullifye/arcade`). Static site on GitHub Pages, no bui
 
 | Game | Path | Live |
 |---|---|---|
-| Teka Kata UiTM (cryptogram) | [`teka-kata/`](teka-kata/) | https://nullifye.github.io/warga-games/teka-kata/ |
+| Teka Kata (cryptogram) | [`teka-kata/`](teka-kata/) | https://nullifye.github.io/warga-games/teka-kata/ |
 | Ular (snake) | [`ular/`](ular/) | https://nullifye.github.io/warga-games/ular/ |
 
 The site root redirects to the hub.

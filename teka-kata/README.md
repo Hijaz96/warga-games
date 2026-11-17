@@ -1,4 +1,4 @@
-# Teka Kata UiTM
+# Teka Kata
 
 A Bahasa Melayu cryptogram game about UiTM and Malaysia. Every letter is replaced by a unique
 number; players decode the phrase with an on-screen keyboard (◀ ▶ jump between blanks).

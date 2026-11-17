@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { wordChunks, LINE_CELLS } from '../js/board.js';
 import { createPuzzle } from '../js/game.js';
-import { mulberry32 } from '../js/rng.js';
+import { mulberry32 } from '../../shared/rng.js';
 import { PHRASES } from '../js/phrases.js';
 
 const chunksOf = (text) => {

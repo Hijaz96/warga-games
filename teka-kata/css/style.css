@@ -1,4 +1,4 @@
-/* Teka Kata UiTM. Mobile-first, light/dark.
+/* Teka Kata. Mobile-first, light/dark.
    Light defaults are AppsWarga's default purple theme. Inside AppsWarga, js/appswarga.js
    replaces the theme-derived tokens (primary, bg, ink, line, keys…) with the user's theme
    and forces light mode (data-theme="light"), as AppsWarga itself is light-only. */

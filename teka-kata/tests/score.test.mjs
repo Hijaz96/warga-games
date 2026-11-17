@@ -42,7 +42,7 @@ test('formatTime', () => {
 test('every phrase scores within the server limits', async () => {
   const { PHRASES } = await import('../js/phrases.js');
   const { createPuzzle } = await import('../js/game.js');
-  const { mulberry32 } = await import('../js/rng.js');
+  const { mulberry32 } = await import('../../shared/rng.js');
   for (const p of PHRASES) {
     for (let seed = 1; seed <= 20; seed++) {
       const h = createPuzzle(p.text, mulberry32(seed)).hiddenCount;

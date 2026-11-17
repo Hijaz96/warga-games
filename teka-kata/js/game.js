@@ -1,5 +1,5 @@
 // Cryptogram engine. Pure state + functions, no DOM, so it can be unit-tested with node --test.
-import { shuffle, mulberry32, dayNumber } from './rng.js';
+import { shuffle, mulberry32, dayNumber } from '../../shared/rng.js';
 
 export const MAX_MISTAKES = 3;
 /** Share of letter cells that start revealed (upper bound). The rest are blanks. */

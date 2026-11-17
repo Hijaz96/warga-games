@@ -1,6 +1,6 @@
 /* Warga Games: shared base styles (tokens, buttons, header, profile chip, top bar,
    leaderboard, dialogs, dropdown, toast). New games link this first, then their own CSS.
-   Copied from Teka Kata UiTM, whose own css/style.css still holds the same rules.
+   Copied from Teka Kata, whose own css/style.css still holds the same rules.
    Inside AppsWarga, shared/appswarga.js replaces the theme-derived tokens with the user's
    theme and forces light mode (data-theme="light"), as AppsWarga itself is light-only. */
 :root {
