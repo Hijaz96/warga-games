@@ -232,7 +232,8 @@ html.from-arked .profile-chip {
     'left down right';
   gap: 8px 10px;
   justify-content: center;
-  padding-bottom: 6px;
+  /* Lifted off the bottom edge, where thumbs reach less easily (and the home bar sits). */
+  padding-bottom: 36px;
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
@@ -430,5 +431,6 @@ html.from-arked .profile-chip {
   .dpad {
     grid-template-columns: repeat(3, 56px);
     grid-template-rows: repeat(2, 48px);
+    padding-bottom: 16px;
   }
 }
