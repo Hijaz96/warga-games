@@ -1,0 +1,10 @@
+{
+  "name": "cryptogram-word-logic",
+  "private": true,
+  "type": "module",
+  "description": "Teka Kata UiTM: Bahasa Melayu cryptogram game (static site, no build step).",
+  "scripts": {
+    "test": "node --test tests/",
+    "serve": "python3 -m http.server 8080"
+  }
+}
