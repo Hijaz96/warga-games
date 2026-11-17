@@ -1,0 +1,571 @@
+/* Duga Kata. Builds on ../shared/base.css (tokens, buttons, header, dialogs, leaderboard). */
+
+/* Tile colours. Correct and present follow the theme's ok and gold; absent is a neutral grey
+   that doesn't follow the theme, so it never looks like a hint. */
+:root {
+  --t-correct: var(--ok);
+  --t-correct-ink: #ffffff;
+  --t-present: var(--gold);
+  --t-present-ink: var(--gold-ink);
+  --t-absent: #7c7785;
+  --t-absent-ink: #ffffff;
+  --t-empty: var(--surface);
+  --t-edge: var(--track);
+  --t-edge-filled: var(--muted);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --t-correct-ink: #0d2318;
+    --t-absent: #4a4556;
+    --t-absent-ink: #e9e5f0;
+    --t-edge: var(--line);
+    --t-edge-filled: var(--ink-2);
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- back to Arked (shared/arked-link.js) ---------- */
+#btn-close-app,
+#btn-hub {
+  display: none;
+}
+
+html.in-appswarga #btn-close-app,
+html.from-arked #btn-hub {
+  display: grid;
+}
+
+/* Opened from Arked Warga: people leave AppsWarga from the hub, so no ✕ here. */
+html.from-arked #btn-close-app {
+  display: none;
+}
+
+html.from-arked .profile-chip {
+  margin-right: auto;
+}
+
+/* ---------- tiles (board, home, help, result) ---------- */
+.dk-tile {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 2px solid var(--t-edge);
+  background: var(--t-empty);
+  color: var(--ink);
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 1;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.dk-tile.filled {
+  border-color: var(--t-edge-filled);
+  animation: pop 0.12s ease-out;
+}
+
+.dk-tile.t-correct,
+.dk-tile.t-present,
+.dk-tile.t-absent {
+  border-color: transparent;
+}
+
+.dk-tile.t-correct {
+  background: var(--t-correct);
+  color: var(--t-correct-ink);
+}
+
+.dk-tile.t-present {
+  background: var(--t-present);
+  color: var(--t-present-ink);
+}
+
+.dk-tile.t-absent {
+  background: var(--t-absent);
+  color: var(--t-absent-ink);
+}
+
+.dk-tile.flip {
+  animation: flip 0.36s ease-in-out;
+}
+
+.dk-tile.win {
+  animation: hop 0.5s ease both;
+}
+
+/* ---------- home ---------- */
+.dk-brand {
+  text-align: center;
+  margin: 22px 0 18px;
+  animation: rise 0.4s both ease-out;
+}
+
+.dk-brand-tiles {
+  display: inline-grid;
+  grid-template-columns: repeat(4, 44px);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.dk-brand-tiles .dk-tile {
+  font-size: 1.4rem;
+  box-shadow: var(--shadow);
+}
+
+.dk-brand h1 {
+  font-size: clamp(2rem, 9vw, 2.6rem);
+  line-height: 1.05;
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.dk-brand h1 span {
+  color: var(--primary);
+}
+
+.dk-brand p {
+  color: var(--ink-2);
+  margin: 8px auto 0;
+  max-width: 30ch;
+}
+
+.mode-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.card-daily {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--gold-2) 30%, var(--surface)), var(--surface) 60%);
+}
+
+.card-free {
+  background: linear-gradient(160deg, #e6e8ec, var(--surface) 60%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .card-free {
+    background: linear-gradient(160deg, #34333a, var(--surface) 60%);
+  }
+}
+
+.card-top {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.card-date {
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.card-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+  flex: 1;
+  line-height: 1.4;
+}
+
+.mini-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 18px 0 0;
+}
+
+.mini-stats div {
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  border-radius: 14px;
+  padding: 10px 4px;
+  text-align: center;
+  min-width: 0;
+}
+
+.mini-stats dt {
+  font-size: 0.7rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.mini-stats dd {
+  margin: 2px 0 0;
+  font-weight: 800;
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Narrow phones: the two mode cards stack. */
+@media (max-width: 360px) {
+  .mode-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- game ---------- */
+.screen-game {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 0;
+}
+
+/* The grid takes the room between the top bar and the keyboard: as big as fits, 5 wide by 6
+   high, never wider than 360px. */
+.dk-stage {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 10px 0;
+  container-type: size;
+}
+
+.dk-grid {
+  --gap: 6px;
+  width: min(100cqw, 360px, calc((100cqh - 5 * var(--gap)) * 5 / 6 + 4 * var(--gap)));
+  display: grid;
+  gap: var(--gap);
+}
+
+.dk-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--gap);
+}
+
+.dk-row.shake {
+  animation: shake 0.4s ease;
+}
+
+.dk-grid .dk-tile {
+  font-size: clamp(1.2rem, 7cqmin, 2rem);
+}
+
+/* Keyboard: like Teka Kata's, edge to edge under the grid. */
+.keyboard {
+  flex: none;
+  margin: 0 -16px;
+  background: var(--surface-2);
+  padding: 10px 6px calc(max(10px, env(safe-area-inset-bottom)) + 14px);
+  display: grid;
+  gap: 8px;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -6px 20px -14px rgba(0, 0, 0, 0.4);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.kb-row {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.kb-row:nth-child(2) {
+  padding: 0 4.5%;
+}
+
+.key {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 46px;
+  height: 54px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--key);
+  color: var(--key-ink);
+  font-weight: 600;
+  font-size: 1.15rem;
+  box-shadow: 0 2px 0 rgba(30, 10, 60, 0.22);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  transition: background 0.2s, color 0.2s;
+}
+
+.key:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.key.t-correct {
+  background: var(--t-correct);
+  color: var(--t-correct-ink);
+}
+
+.key.t-present {
+  background: var(--t-present);
+  color: var(--t-present-ink);
+}
+
+.key.t-absent {
+  background: var(--t-absent);
+  color: var(--t-absent-ink);
+  opacity: 0.75;
+}
+
+.key-wide {
+  flex: 1.6 1 0;
+  max-width: 72px;
+  /* "TEKA" fits its key down to 320px-wide phones. */
+  font-size: clamp(0.6rem, 2.9vw, 0.78rem);
+  font-weight: 700;
+}
+
+.key-enter {
+  background: var(--primary);
+  color: var(--primary-ink);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--primary) 50%, #000);
+}
+
+.key-wide svg {
+  width: 24px;
+  height: 24px;
+}
+
+.keyboard.locked .key {
+  pointer-events: none;
+}
+
+/* Short phones: shorter keys so the grid keeps its room. */
+@media (max-height: 640px) {
+  .key {
+    height: 46px;
+  }
+
+  .keyboard {
+    gap: 6px;
+  }
+}
+
+/* ---------- help ---------- */
+.help-example {
+  margin: 12px 0;
+}
+
+.help-example p {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+}
+
+.dk-row-mini {
+  display: grid;
+  grid-template-columns: repeat(5, 36px);
+  gap: 4px;
+}
+
+.dk-row-mini .dk-tile {
+  font-size: 1.05rem;
+  border-radius: 8px;
+}
+
+/* ---------- result ---------- */
+#screen-result .bar {
+  margin-bottom: 12px;
+}
+
+@media (min-height: 640px) {
+  #screen-result::after {
+    content: '';
+    flex: none;
+    height: 56px;
+  }
+}
+
+.dk-result {
+  margin: auto 0;
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 24px 18px 18px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  animation: rise 0.4s ease both;
+}
+
+.dk-result-badge {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.dk-result h2 {
+  margin: 10px 0 2px;
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.res-mode {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 0.85rem;
+}
+
+.res-word {
+  display: inline-grid;
+  grid-template-columns: repeat(5, 40px);
+  gap: 5px;
+  margin: 16px 0 0;
+}
+
+.res-word .dk-tile {
+  font-size: 1.3rem;
+}
+
+/* The round as small coloured squares (what Kongsi shares). */
+.res-grid {
+  display: grid;
+  justify-content: center;
+  gap: 3px;
+  margin: 12px 0 0;
+}
+
+.res-grid div {
+  display: grid;
+  grid-template-columns: repeat(5, 14px);
+  gap: 3px;
+}
+
+.res-grid span {
+  height: 14px;
+  border-radius: 3px;
+}
+
+.res-grid .t-correct { background: var(--t-correct); }
+.res-grid .t-present { background: var(--t-present); }
+.res-grid .t-absent { background: var(--t-absent); }
+
+.res-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 18px 0 10px;
+}
+
+.res-stats div {
+  background: var(--bg-2);
+  border-radius: 14px;
+  padding: 10px 4px;
+}
+
+.res-stats div.hl {
+  background: linear-gradient(180deg, var(--gold-2), var(--gold));
+  color: var(--gold-ink);
+}
+
+.res-stats dt {
+  font-size: 0.72rem;
+  opacity: 0.8;
+}
+
+.res-stats dd {
+  margin: 2px 0 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.res-submit {
+  min-height: 24px;
+  font-size: 0.88rem;
+  color: var(--ink-2);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.res-submit.ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.res-submit.err {
+  color: var(--bad);
+}
+
+.res-submit.busy span::after {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-left: 6px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.res-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.res-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.res-row .btn {
+  padding-inline: 10px;
+  white-space: nowrap;
+  font-size: 0.95rem;
+}
+
+/* ---------- animations ---------- */
+@keyframes pop {
+  50% { transform: scale(1.1); }
+}
+
+@keyframes flip {
+  0% { transform: rotateX(0); }
+  50% { transform: rotateX(90deg); }
+  100% { transform: rotateX(0); }
+}
+
+@keyframes hop {
+  40% { transform: translateY(-14px); }
+  70% { transform: translateY(2px); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}

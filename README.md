@@ -7,6 +7,7 @@ AppsWarga app (hub repo: `nullifye/arcade`). Static site on GitHub Pages, no bui
 |---|---|---|
 | Teka Kata (cryptogram) | [`teka-kata/`](teka-kata/) | https://nullifye.github.io/warga-games/teka-kata/ |
 | Ular (snake) | [`ular/`](ular/) | https://nullifye.github.io/warga-games/ular/ |
+| Duga Kata (5-letter word guess) | [`duga-kata/`](duga-kata/) | https://nullifye.github.io/warga-games/duga-kata/ |
 
 The site root redirects to the hub.
 
@@ -14,7 +15,7 @@ The site root redirects to the hub.
 
 ```sh
 npm run serve   # http://localhost:8080/warga-games/ular/  (the hub at /arcade/ from ../arked)
-npm test        # node --test: shared/, teka-kata/, ular/
+npm test        # node --test: shared/, teka-kata/, ular/, duga-kata/
 ```
 
 ## Shared code (`shared/`)
@@ -28,6 +29,7 @@ One copy for every game; games import it with `../../shared/…`.
 | `arked-link.js` | `?dari=arked`: the ‹ back-to-Arked button, and share links without it |
 | `profile.js` | The profile chip and dialog (shared `arked.profile`) |
 | `leaderboard.js` | `arked_record` / `arked_top` / `arked_campus_rank` and the board lists |
+| `rng.js` | Seeded PRNG, shuffle and Malaysia-time dates, for daily puzzles everyone shares |
 | `base.css` | Tokens, buttons, header, top bar, leaderboard, dialogs, dropdown, toast |
 | `select.js`, `profile-options.js`, `config.js`, `uuid.js`, `reload.js` | Dropdown, user types and campuses, Supabase settings, ids, fresh reload |
 
@@ -52,3 +54,17 @@ The hub keeps its own copies of `appswarga.js`, `select.js`, `profile-options.js
 - **D-pad** on or off; swiping on the board and arrow keys / WASD always work.
 - Pauses when the page is hidden or AppsWarga goes to the background.
 - Rules in `ular/js/snake.js` (unit-tested); every round with points goes to `arked_record`.
+
+## Duga Kata
+
+- Guess a 5-letter Malay word in 6 tries. Each guess is marked tile by tile: **hijau** (right
+  letter, right place), **kuning** (in the word, elsewhere), **kelabu** (not in the word).
+  Repeated letters are marked only as often as the answer has them.
+- **Cabaran Harian**: the same word for everyone, new at midnight Malaysia time (`dk.daily`
+  resumes it after a reload; the clock keeps running). **Main Bebas**: random words, no limit.
+- A guess must be in `duga-kata/js/words.js` (`ANSWERS` + `GUESSES`); a word not in the lists
+  shakes the row and doesn't use a try. **The lists are a hand-written draft: have them reviewed
+  before launch.** Changing `ANSWERS` reshuffles which word falls on which day.
+- Score: 1,000 / 800 / 600 / 450 / 300 / 200 for a win in 1–6 guesses, plus 2 a second under
+  3 minutes; a loss is 0 and still counts as a play. Every round goes to `arked_record`.
+- Rules in `duga-kata/js/logic.js`, score in `score.js` (both unit-tested).

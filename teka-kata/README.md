@@ -64,7 +64,7 @@ score  = round_half_up((H*50 + max(0, H*8 - seconds)*10) * [100%, 70%, 40%][mist
 | File | Role |
 |---|---|
 | `js/game.js` | Pure puzzle engine: cipher, reveal, guesses, blank navigation, daily phrase pick |
-| `js/rng.js` | Seeded PRNG, so everyone gets the same daily puzzle (Malaysia time) |
+| `../shared/rng.js` | Seeded PRNG, so everyone gets the same daily puzzle (Malaysia time) |
 | `js/board.js` | Puzzle grid + keyboard rendering and animations |
 | `js/main.js` | Hash router (`#/`, `#/harian`, `#/bebas`, `#/keputusan`, `#/papan`), profile, results, leaderboard |
 

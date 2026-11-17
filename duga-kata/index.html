@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Duga Kata</title>
+  <meta name="description" content="Teka perkataan Bahasa Melayu lima huruf dalam enam cubaan. Satu kata baharu setiap hari untuk warga UiTM.">
+  <meta name="theme-color" content="#7b1fa2">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="css/duga.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body data-screen="home">
+  <div id="app">
+    <!-- Laman utama -->
+    <section id="screen-home" class="screen screen-home" hidden>
+      <header class="home-head">
+        <!-- Only when opened from Arked Warga (html.from-arked): back to the game hub. -->
+        <button type="button" class="icon-btn" id="btn-hub" aria-label="Kembali ke Arked Warga">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="profile-chip" id="profile-chip">
+          <span class="avatar" id="chip-avatar" aria-hidden="true">?</span>
+          <span class="chip-text">
+            <strong id="chip-name">Tetapkan profil</strong>
+            <small id="chip-meta">Nama, kategori &amp; kampus</small>
+          </span>
+        </button>
+        <div class="head-actions">
+          <button type="button" class="icon-btn" id="btn-help" aria-label="Cara bermain">?</button>
+          <!-- Only inside AppsWarga, unless opened from Arked Warga: leaves the webapp. -->
+          <button type="button" class="icon-btn" id="btn-close-app" aria-label="Tutup permainan">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="dk-brand">
+        <div class="dk-brand-tiles" aria-hidden="true">
+          <span class="dk-tile t-correct">D</span><span class="dk-tile t-absent">U</span><span class="dk-tile t-present">G</span><span class="dk-tile t-correct">A</span>
+        </div>
+        <h1>Duga <span>Kata</span></h1>
+        <p>Teka perkataan lima huruf dalam enam cubaan.</p>
+      </div>
+
+      <div class="mode-cards">
+        <article class="card card-daily">
+          <div class="card-top">
+            <span class="tag tag-gold">Cabaran Harian</span>
+            <span class="card-date" id="daily-date"></span>
+          </div>
+          <p class="card-text" id="daily-status">Satu kata yang sama untuk semua pemain hari ini.</p>
+          <button type="button" class="btn btn-gold" id="btn-daily">Main</button>
+        </article>
+        <article class="card card-free">
+          <div class="card-top"><span class="tag">Main Bebas</span></div>
+          <p class="card-text">Kata rawak tanpa had. Markah dikumpulkan di papan markah.</p>
+          <button type="button" class="btn btn-primary" id="btn-free">Mula</button>
+        </article>
+      </div>
+
+      <button type="button" class="btn btn-ghost btn-wide" id="btn-board">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4ZM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Papan Markah
+      </button>
+
+      <dl class="mini-stats">
+        <div><dt>Dimainkan</dt><dd id="st-played">0</dd></div>
+        <div><dt>% Menang</dt><dd id="st-winpct">0</dd></div>
+        <div><dt>Rentetan</dt><dd id="st-streak">0</dd></div>
+        <div><dt>Terbaik</dt><dd id="st-best">0</dd></div>
+      </dl>
+
+      <button type="button" class="app-version" id="btn-version" aria-label="Versi 1.0. Ketik untuk muat semula permainan.">Versi 1.0</button>
+    </section>
+
+    <!-- Permainan -->
+    <section id="screen-game" class="screen screen-game" hidden>
+      <header class="bar">
+        <button type="button" class="icon-btn" id="btn-quit" aria-label="Kembali ke laman utama">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="bar-mid">
+          <span class="bar-title" id="game-title">Duga Kata</span>
+          <span class="bar-sub" id="game-mode"></span>
+        </div>
+        <button type="button" class="icon-btn" id="btn-game-help" aria-label="Cara bermain">?</button>
+      </header>
+      <div class="dk-stage" id="stage">
+        <div class="dk-grid" id="grid" role="grid" aria-label="Papan teka"></div>
+      </div>
+      <p class="sr-only" id="announce" aria-live="polite"></p>
+      <div class="keyboard" id="keyboard" aria-label="Papan kekunci"></div>
+    </section>
+
+    <!-- Keputusan -->
+    <section id="screen-result" class="screen screen-result" hidden>
+      <header class="bar">
+        <button type="button" class="icon-btn" id="res-home" aria-label="Kembali ke laman utama">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </header>
+      <div class="dk-result">
+        <div class="dk-result-badge" id="res-badge" aria-hidden="true"></div>
+        <h2 id="res-title"></h2>
+        <p class="res-mode" id="res-mode"></p>
+        <div class="res-word" id="res-word" aria-label="Jawapan"></div>
+        <div class="res-grid" id="res-grid" aria-hidden="true"></div>
+        <dl class="res-stats">
+          <div><dt>Cubaan</dt><dd id="res-tries"></dd></div>
+          <div><dt>Masa</dt><dd id="res-time"></dd></div>
+          <div class="hl"><dt>Markah</dt><dd id="res-score"></dd></div>
+        </dl>
+        <div class="res-submit" id="res-submit" role="status"></div>
+        <div class="res-actions">
+          <button type="button" class="btn btn-primary" id="res-again">Main Lagi</button>
+          <div class="res-row">
+            <button type="button" class="btn btn-ghost" id="res-share">Kongsi</button>
+            <button type="button" class="btn btn-ghost" id="res-board">Papan Markah</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Papan markah -->
+    <section id="screen-board" class="screen screen-board" hidden>
+      <header class="bar">
+        <button type="button" class="icon-btn" id="btn-board-back" aria-label="Kembali">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="bar-mid"><span class="bar-title">Papan Markah</span><span class="bar-sub" id="board-sub"></span></div>
+        <button type="button" class="icon-btn" id="btn-board-refresh" aria-label="Muat semula">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </header>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" data-tab="daily" aria-selected="true">Hari Ini</button>
+        <button type="button" role="tab" data-tab="alltime" aria-selected="false">Keseluruhan</button>
+        <button type="button" role="tab" data-tab="campus" aria-selected="false">Kampus</button>
+      </div>
+      <div class="lb-body" id="lb-body" role="tabpanel"></div>
+    </section>
+  </div>
+
+  <!-- Profil -->
+  <dialog id="dlg-profile" class="dialog">
+    <form id="profile-form" method="dialog" novalidate>
+      <h2>Profil Pemain</h2>
+      <p class="muted">Digunakan dalam semua permainan dan papan markah.</p>
+      <label class="field">
+        <span>Nama panggilan</span>
+        <input id="pf-name" name="nickname" maxlength="20" required autocomplete="nickname" placeholder="cth. Siti_FSKM">
+      </label>
+      <label class="field">
+        <span>Kategori</span>
+        <span class="select-wrap"><select id="pf-type" name="user_type" required aria-describedby="pf-type-hint"></select></span>
+        <small class="field-hint" id="pf-type-hint" hidden></small>
+      </label>
+      <label class="field">
+        <span>Kampus</span>
+        <span class="select-wrap"><select id="pf-campus" name="campus" required></select></span>
+      </label>
+      <p class="form-error" id="pf-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-ghost" id="pf-cancel">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Cara bermain -->
+  <dialog id="dlg-help" class="dialog">
+    <h2>Cara Bermain</h2>
+    <p class="muted">Teka kata <b>5 huruf</b> dalam <b>6 cubaan</b>. Setiap tekaan mesti perkataan Bahasa Melayu yang sah.</p>
+    <div class="help-example">
+      <div class="dk-row-mini" aria-hidden="true"><span class="dk-tile t-correct">B</span><span class="dk-tile">U</span><span class="dk-tile">N</span><span class="dk-tile">G</span><span class="dk-tile">A</span></div>
+      <p><b>Hijau</b>: huruf <b>B</b> ada dalam kata dan di tempat yang betul.</p>
+    </div>
+    <div class="help-example">
+      <div class="dk-row-mini" aria-hidden="true"><span class="dk-tile">T</span><span class="dk-tile t-present">A</span><span class="dk-tile">M</span><span class="dk-tile">A</span><span class="dk-tile">N</span></div>
+      <p><b>Kuning</b>: huruf <b>A</b> ada dalam kata tetapi di tempat lain.</p>
+    </div>
+    <div class="help-example">
+      <div class="dk-row-mini" aria-hidden="true"><span class="dk-tile">S</span><span class="dk-tile">A</span><span class="dk-tile">Y</span><span class="dk-tile t-absent">U</span><span class="dk-tile">R</span></div>
+      <p><b>Kelabu</b>: huruf <b>U</b> tiada dalam kata.</p>
+    </div>
+    <p class="muted">Cabaran Harian: satu kata yang sama untuk semua, baharu setiap tengah malam. Kurang cubaan dan lebih pantas, lebih banyak markah.</p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-primary" id="help-close">Faham!</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
