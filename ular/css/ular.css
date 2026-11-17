@@ -230,7 +230,8 @@ html.from-arked .profile-chip {
   grid-template-areas:
     '. up .'
     'left down right';
-  gap: 8px 10px;
+  /* Wide gaps so a thumb aimed at one arrow doesn't catch its neighbour. */
+  gap: 14px 22px;
   justify-content: center;
   /* Lifted off the bottom edge, where thumbs reach less easily (and the home bar sits). */
   padding-bottom: 36px;
