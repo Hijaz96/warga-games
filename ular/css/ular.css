@@ -1,0 +1,433 @@
+/* Ular. Builds on ../shared/base.css (tokens, buttons, header, dialogs, leaderboard). */
+
+/* ---------- back to Arked (shared/arked-link.js) ---------- */
+#btn-close-app,
+#btn-hub {
+  display: none;
+}
+
+html.in-appswarga #btn-close-app,
+html.from-arked #btn-hub {
+  display: grid;
+}
+
+/* Opened from Arked Warga: people leave AppsWarga from the hub, so no ✕ here. */
+html.from-arked #btn-close-app {
+  display: none;
+}
+
+html.from-arked .profile-chip {
+  margin-right: auto;
+}
+
+/* ---------- home ---------- */
+.screen-home > .btn {
+  margin-top: 12px;
+}
+
+.ul-brand {
+  text-align: center;
+  margin: 22px 0 18px;
+  animation: rise 0.4s both ease-out;
+}
+
+.ul-brand img {
+  display: block;
+  margin: 0 auto 10px;
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+.ul-brand h1 {
+  font-size: clamp(2rem, 9vw, 2.6rem);
+  line-height: 1.05;
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.ul-brand p {
+  color: var(--ink-2);
+  margin: 8px auto 0;
+  max-width: 30ch;
+}
+
+.ul-best {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.ul-best div {
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  border-radius: 14px;
+  padding: 10px 6px;
+  text-align: center;
+}
+
+.ul-best dt {
+  font-size: 0.72rem;
+  color: var(--ink-2);
+}
+
+.ul-best dd {
+  margin: 2px 0 0;
+  font-weight: 800;
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ul-settings {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.switch-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 0;
+  background: none;
+  text-align: left;
+  min-height: 60px;
+}
+
+.switch-row + .switch-row {
+  border-top: 1px solid var(--track);
+}
+
+.switch-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.switch-text small {
+  color: var(--ink-2);
+  font-size: 0.78rem;
+}
+
+/* A flat toggle: grey track with a white knob; the theme colour when on. */
+.switch {
+  flex: none;
+  position: relative;
+  width: 50px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--key-off);
+  transition: background 0.2s;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s;
+}
+
+.switch-row[aria-checked='true'] .switch {
+  background: var(--primary);
+}
+
+.switch-row[aria-checked='true'] .switch::after {
+  transform: translateX(20px);
+}
+
+.screen-home .app-version {
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+/* ---------- game ---------- */
+.screen-game {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The board takes all the room between the top bar and the D-pad, as a square. */
+.ul-stage {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  margin: 12px 0;
+  touch-action: none; /* swipes steer the snake, not the page */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ul-board {
+  position: relative;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  /* Walls off: a soft edge. */
+  border: 3px solid var(--track);
+}
+
+/* Walls on: a solid edge in the theme colour. */
+.ul-board.walls {
+  border-color: var(--primary);
+}
+
+.ul-board canvas {
+  display: block;
+  border-radius: 11px;
+}
+
+.ul-board.hit {
+  animation: shake 0.35s ease;
+}
+
+.ul-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  backdrop-filter: blur(2px);
+  text-align: center;
+}
+
+.ul-overlay p {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+
+.ul-overlay .btn-gold {
+  min-width: 140px;
+}
+
+/* D-pad: a cross of flat-3D keys (like Teka Kata's keyboard), under the board. */
+.dpad {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(3, 64px);
+  grid-template-rows: repeat(3, 58px);
+  grid-template-areas:
+    '. up .'
+    'left . right'
+    '. down .';
+  gap: 4px 10px;
+  justify-content: center;
+  padding-bottom: 6px;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.dpad-btn {
+  border: 0;
+  border-radius: 16px;
+  background: var(--key);
+  color: var(--key-ink);
+  box-shadow: 0 4px 0 var(--line);
+  display: grid;
+  place-items: center;
+  transition: transform 0.06s, box-shadow 0.06s;
+}
+
+.dpad-btn svg {
+  width: 26px;
+  height: 26px;
+}
+
+.dpad-btn.up { grid-area: up; }
+.dpad-btn.down { grid-area: down; }
+.dpad-btn.left { grid-area: left; }
+.dpad-btn.right { grid-area: right; }
+
+.dpad-btn:active,
+.dpad-btn.pressed {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--line);
+}
+
+.swipe-hint {
+  flex: none;
+  margin: 0 0 6px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* D-pad off: swipes only. */
+.screen-game.no-dpad .dpad {
+  display: none;
+}
+
+.screen-game:not(.no-dpad) .swipe-hint {
+  display: none;
+}
+
+/* ---------- result ---------- */
+#screen-result .bar {
+  margin-bottom: 12px;
+}
+
+@media (min-height: 640px) {
+  #screen-result::after {
+    content: '';
+    flex: none;
+    height: 56px;
+  }
+}
+
+.ul-result {
+  margin: auto 0;
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 24px 18px 18px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  animation: rise 0.4s ease both;
+}
+
+.ul-result-badge {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.ul-result h2 {
+  margin: 10px 0 2px;
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.res-mode {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 0.85rem;
+}
+
+.res-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 20px 0 10px;
+}
+
+.res-stats div {
+  background: var(--bg-2);
+  border-radius: 14px;
+  padding: 10px 4px;
+}
+
+.res-stats div.hl {
+  background: linear-gradient(180deg, var(--gold-2), var(--gold));
+  color: var(--gold-ink);
+}
+
+.res-stats dt {
+  font-size: 0.72rem;
+  opacity: 0.8;
+}
+
+.res-stats dd {
+  margin: 2px 0 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.res-best {
+  margin: 0 0 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.res-best.new {
+  color: var(--primary);
+}
+
+.res-submit {
+  min-height: 24px;
+  font-size: 0.88rem;
+  color: var(--ink-2);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.res-submit.ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.res-submit.err {
+  color: var(--bad);
+}
+
+.res-submit.busy span::after {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-left: 6px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.res-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.res-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.res-row .btn {
+  padding-inline: 10px;
+  white-space: nowrap;
+  font-size: 0.95rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+/* Short phones: a smaller D-pad so the board keeps its room. */
+@media (max-height: 700px) {
+  .dpad {
+    grid-template-columns: repeat(3, 56px);
+    grid-template-rows: repeat(3, 48px);
+  }
+}

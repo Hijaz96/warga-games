@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ular</title>
+  <meta name="description" content="Permainan ular klasik untuk warga UiTM: makan, membesar, jangan langgar diri sendiri.">
+  <meta name="theme-color" content="#1f7a4d">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="css/ular.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body data-screen="home">
+  <div id="app">
+    <!-- Laman utama -->
+    <section id="screen-home" class="screen screen-home" hidden>
+      <header class="home-head">
+        <!-- Only when opened from Arked Warga (html.from-arked): back to the game hub. -->
+        <button type="button" class="icon-btn" id="btn-hub" aria-label="Kembali ke Arked Warga">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="profile-chip" id="profile-chip">
+          <span class="avatar" id="chip-avatar" aria-hidden="true">?</span>
+          <span class="chip-text">
+            <strong id="chip-name">Tetapkan profil</strong>
+            <small id="chip-meta">Nama, kategori &amp; kampus</small>
+          </span>
+        </button>
+        <div class="head-actions">
+          <button type="button" class="icon-btn" id="btn-help" aria-label="Cara bermain">?</button>
+          <!-- Only inside AppsWarga, unless opened from Arked Warga: leaves the webapp. -->
+          <button type="button" class="icon-btn" id="btn-close-app" aria-label="Tutup permainan">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="ul-brand">
+        <img src="icon.svg" alt="" width="84" height="84">
+        <h1>Ular</h1>
+        <p>Makan, membesar, dan jangan langgar diri sendiri.</p>
+      </div>
+
+      <dl class="ul-best">
+        <div><dt>Markah terbaik</dt><dd id="st-best">0</dd></div>
+        <div><dt>Dimainkan</dt><dd id="st-played">0</dd></div>
+      </dl>
+
+      <div class="ul-settings" role="group" aria-label="Tetapan">
+        <button type="button" class="switch-row" id="set-walls" role="switch" aria-checked="true">
+          <span class="switch-text">
+            <strong>Dinding</strong>
+            <small id="set-walls-hint">Langgar tepi = tamat · 15 mata setiap makanan</small>
+          </span>
+          <span class="switch" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="switch-row" id="set-dpad" role="switch" aria-checked="true">
+          <span class="switch-text">
+            <strong>D-pad</strong>
+            <small id="set-dpad-hint">Butang arah di skrin</small>
+          </span>
+          <span class="switch" aria-hidden="true"></span>
+        </button>
+      </div>
+
+      <button type="button" class="btn btn-primary btn-wide" id="btn-play">Main</button>
+      <button type="button" class="btn btn-ghost btn-wide" id="btn-board">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4ZM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Papan Markah
+      </button>
+
+      <button type="button" class="app-version" id="btn-version" aria-label="Versi 1.0. Ketik untuk muat semula permainan.">Versi 1.0</button>
+    </section>
+
+    <!-- Permainan -->
+    <section id="screen-game" class="screen screen-game" hidden>
+      <header class="bar">
+        <button type="button" class="icon-btn" id="btn-quit" aria-label="Kembali ke laman utama">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="bar-mid">
+          <span class="bar-title" id="game-score" aria-live="polite">0</span>
+          <span class="bar-sub" id="game-mode"></span>
+        </div>
+        <button type="button" class="icon-btn" id="btn-pause" aria-label="Rehat">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="ul-stage" id="stage">
+        <div class="ul-board" id="board-box">
+          <canvas id="board" aria-label="Papan permainan ular"></canvas>
+          <div class="ul-overlay" id="overlay" hidden>
+            <p id="overlay-text"></p>
+            <button type="button" class="btn btn-gold" id="overlay-btn"></button>
+            <button type="button" class="btn btn-link" id="overlay-quit" hidden>Keluar</button>
+          </div>
+        </div>
+      </div>
+      <div class="dpad" id="dpad" aria-label="Arah">
+        <button type="button" class="dpad-btn up" data-dir="up" aria-label="Atas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15l7-7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button type="button" class="dpad-btn left" data-dir="left" aria-label="Kiri"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button type="button" class="dpad-btn right" data-dir="right" aria-label="Kanan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button type="button" class="dpad-btn down" data-dir="down" aria-label="Bawah"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <p class="swipe-hint" id="swipe-hint">Leret pada papan untuk menukar arah.</p>
+    </section>
+
+    <!-- Keputusan -->
+    <section id="screen-result" class="screen screen-result" hidden>
+      <header class="bar">
+        <button type="button" class="icon-btn" id="res-home" aria-label="Kembali ke laman utama">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </header>
+      <div class="ul-result">
+        <div class="ul-result-badge" id="res-badge" aria-hidden="true"></div>
+        <h2 id="res-title"></h2>
+        <p class="res-mode" id="res-mode"></p>
+        <dl class="res-stats">
+          <div><dt>Makanan</dt><dd id="res-foods"></dd></div>
+          <div><dt>Masa</dt><dd id="res-time"></dd></div>
+          <div class="hl"><dt>Markah</dt><dd id="res-score"></dd></div>
+        </dl>
+        <p class="res-best" id="res-best"></p>
+        <div class="res-submit" id="res-submit" role="status"></div>
+        <div class="res-actions">
+          <button type="button" class="btn btn-primary" id="res-again">Main Lagi</button>
+          <div class="res-row">
+            <button type="button" class="btn btn-ghost" id="res-share">Kongsi</button>
+            <button type="button" class="btn btn-ghost" id="res-board">Papan Markah</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Papan markah -->
+    <section id="screen-board" class="screen screen-board" hidden>
+      <header class="bar">
+        <button type="button" class="icon-btn" id="btn-board-back" aria-label="Kembali">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="bar-mid"><span class="bar-title">Papan Markah</span><span class="bar-sub" id="board-sub"></span></div>
+        <button type="button" class="icon-btn" id="btn-board-refresh" aria-label="Muat semula">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </header>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" data-tab="daily" aria-selected="true">Hari Ini</button>
+        <button type="button" role="tab" data-tab="alltime" aria-selected="false">Keseluruhan</button>
+        <button type="button" role="tab" data-tab="campus" aria-selected="false">Kampus</button>
+      </div>
+      <div class="lb-body" id="lb-body" role="tabpanel"></div>
+    </section>
+  </div>
+
+  <!-- Profil -->
+  <dialog id="dlg-profile" class="dialog">
+    <form id="profile-form" method="dialog" novalidate>
+      <h2>Profil Pemain</h2>
+      <p class="muted">Digunakan dalam semua permainan dan papan markah.</p>
+      <label class="field">
+        <span>Nama panggilan</span>
+        <input id="pf-name" name="nickname" maxlength="20" required autocomplete="nickname" placeholder="cth. Siti_FSKM">
+      </label>
+      <label class="field">
+        <span>Kategori</span>
+        <span class="select-wrap"><select id="pf-type" name="user_type" required aria-describedby="pf-type-hint"></select></span>
+        <small class="field-hint" id="pf-type-hint" hidden></small>
+      </label>
+      <label class="field">
+        <span>Kampus</span>
+        <span class="select-wrap"><select id="pf-campus" name="campus" required></select></span>
+      </label>
+      <p class="form-error" id="pf-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-ghost" id="pf-cancel">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Cara bermain -->
+  <dialog id="dlg-help" class="dialog">
+    <h2>Cara Bermain</h2>
+    <ol class="help-list">
+      <li>Gerakkan ular untuk <b>makan</b>. Setiap makanan memanjangkan ular dan menambah kelajuan.</li>
+      <li>Tukar arah dengan <b>D-pad</b>, <b>leret</b> pada papan, atau kekunci anak panah / WASD.</li>
+      <li>Langgar badan sendiri = <b>tamat</b>.</li>
+      <li><b>Dinding</b> hidup: langgar tepi = tamat, <b>15 mata</b> setiap makanan. Dinding mati: ular keluar di sebelah bertentangan, <b>10 mata</b>.</li>
+      <li>Markah dikumpulkan di papan markah dan Arked Warga.</li>
+    </ol>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-primary" id="help-close">Faham!</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

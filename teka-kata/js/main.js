@@ -14,11 +14,11 @@ import { mulberry32, hashString, randomSeed, todayKL } from './rng.js';
 import { computeScore, formatTime } from './score.js';
 import { BoardView } from './board.js';
 import * as lb from './leaderboard.js';
-import { USER_TYPES, CAMPUSES, NON_UITM_CAMPUS, userTypeLabel } from './profile-options.js';
-import { enhanceSelect, refreshSelect, closeSelectSheet } from './select.js';
+import { USER_TYPES, CAMPUSES, NON_UITM_CAMPUS, userTypeLabel } from '../../shared/profile-options.js';
+import { enhanceSelect, refreshSelect, closeSelectSheet } from '../../shared/select.js';
 import { store, uuid } from './storage.js';
-import { PROFILE_KEY, gameKey, migrateLocal, readShared, syncShared, writeShared } from './shared-store.js';
-import { initFromArked, backToArked, shareUrl } from './arked.js';
+import { PROFILE_KEY, gameKey, migrateLocal, readShared, syncShared, writeShared } from '../../shared/shared-store.js';
+import { initFromArked, backToArked, shareUrl } from '../../shared/arked-link.js';
 import {
   initAppsWarga,
   appsWargaAllowedUserTypes,
@@ -27,7 +27,7 @@ import {
   appsWargaShare,
   closeMiniApp,
   notifyAppReady,
-} from './appswarga.js';
+} from '../../shared/appswarga.js';
 
 const $ = (sel) => document.querySelector(sel);
 // The profile is shared with Arked Warga and its other games (js/shared-store.js); the rest is

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cameFromHub, hubUrl, shareUrl } from '../js/arked.js';
+import { cameFromHub, hubUrl, shareUrl } from '../shared/arked-link.js';
 
 test('the hub address is fixed on GitHub Pages, local on a dev server', () => {
   assert.equal(hubUrl({ hostname: 'nullifye.github.io', origin: 'https://nullifye.github.io' }), 'https://nullifye.github.io/arcade/');

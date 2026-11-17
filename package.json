@@ -1,0 +1,10 @@
+{
+  "name": "warga-games",
+  "private": true,
+  "type": "module",
+  "description": "Games for Arked Warga (AppsWarga, UiTM): Teka Kata, Ular and more. Static site, no build step.",
+  "scripts": {
+    "test": "node --test tests/ teka-kata/tests/ ular/tests/",
+    "serve": "node tools/dev-server.mjs 8080"
+  }
+}

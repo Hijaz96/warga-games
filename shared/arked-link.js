@@ -1,12 +1,16 @@
 // Opened from Arked Warga, the game hub (https://nullifye.github.io/arcade/): the hub opens
-// games with ?dari=arked, and the home screen then shows ‹ (back to Arked) instead of ✕.
+// games with ?dari=arked, and a game then shows ‹ (back to Arked) instead of ✕.
 //
 // Going back walks the browser history to the hub's page, so the hub comes back as it was.
 // If that can't work (e.g. the history was lost), it opens the hub's fixed address. The
 // address is never taken from the link, so ?dari=arked can't send anyone elsewhere.
+//
+// Usage: initFromArked() once on load (adds html.from-arked); backToArked() on the ‹ button.
 
 const HUB_HOST = 'nullifye.github.io';
-const FLAG = 'tk.fromArked'; // sessionStorage: { base } = history index of the first page from the hub
+// sessionStorage, per game (every game is on the same site): { base } = the history index of
+// the game's first page after the hub, or null when it wasn't opened straight from the hub.
+const flagKey = () => `arked.from:${location.pathname}`;
 
 /** The hub's address; on a local dev server (tools/dev-server.mjs in arked), the local copy. */
 export function hubUrl(here = location) {
@@ -16,15 +20,15 @@ export function hubUrl(here = location) {
 const session = {
   get() {
     try {
-      return JSON.parse(sessionStorage.getItem(FLAG));
+      return JSON.parse(sessionStorage.getItem(flagKey()));
     } catch {
       return null;
     }
   },
   set(v) {
     try {
-      if (v == null) sessionStorage.removeItem(FLAG);
-      else sessionStorage.setItem(FLAG, JSON.stringify(v));
+      if (v == null) sessionStorage.removeItem(flagKey());
+      else sessionStorage.setItem(flagKey(), JSON.stringify(v));
     } catch {
       /* storage unavailable: going back uses the hub's address */
     }

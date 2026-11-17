@@ -1,5 +1,5 @@
 // Supabase leaderboard over plain fetch (PostgREST RPC). No SDK needed.
-import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
+import { SUPABASE_URL, SUPABASE_KEY } from '../../shared/config.js';
 
 export const isConfigured = () => Boolean(SUPABASE_URL && SUPABASE_KEY);
 
