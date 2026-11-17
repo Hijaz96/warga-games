@@ -231,7 +231,7 @@ html.from-arked .profile-chip {
     '. up .'
     'left down right';
   /* Wide gaps so a thumb aimed at one arrow doesn't catch its neighbour. */
-  gap: 14px 22px;
+  gap: 17px;
   justify-content: center;
   /* Lifted off the bottom edge, where thumbs reach less easily (and the home bar sits). */
   padding-bottom: 36px;
