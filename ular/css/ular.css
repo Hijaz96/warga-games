@@ -203,7 +203,8 @@ html.from-arked .profile-chip {
   gap: 12px;
   padding: 16px;
   border-radius: 11px;
-  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  /* Dims the dark board; the board shows through. */
+  background: rgba(8, 8, 12, 0.55);
   backdrop-filter: blur(2px);
   text-align: center;
 }
@@ -212,7 +213,11 @@ html.from-arked .profile-chip {
   margin: 0;
   font-weight: 700;
   font-size: 1.05rem;
-  color: var(--ink);
+  color: #fff;
+}
+
+.ul-overlay .btn-link {
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .ul-overlay .btn-gold {

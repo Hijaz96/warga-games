@@ -268,6 +268,17 @@ function roundRect(ctx, x, y, w, hgt, r) {
   ctx.closePath();
 }
 
+/** Mixes hex colour `a` toward `b` by `t` (0 = a, 1 = b); `a` falls back to purple if it isn't #rrggbb. */
+function mix(a, b, t) {
+  const rgb = (hex) => {
+    const n = parseInt(/^#[0-9a-f]{6}$/i.test(hex) ? hex.slice(1) : '7b1fa2', 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  };
+  const A = rgb(a);
+  const B = rgb(b);
+  return `#${A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join('')}`;
+}
+
 function draw() {
   if (!game) return;
   const ctx = $('#board').getContext('2d');
@@ -276,13 +287,24 @@ function draw() {
   const { state } = game;
   const c = cellPx;
   const n = state.size;
-  // A checkerboard in two close shades of the page background (no white squares).
-  ctx.fillStyle = color('--bg');
+  const primary = color('--primary');
+  // A dark board (the theme colour, almost black) with fine near-white lines between cells.
+  const board = mix(primary, '#0b0b0f', 0.86);
+  $('#board-box').style.background = board;
+  ctx.fillStyle = board;
   ctx.fillRect(0, 0, c * n, c * n);
-  ctx.fillStyle = color('--surface-2');
-  for (let y = 0; y < n; y++) {
-    for (let x = y % 2; x < n; x += 2) ctx.fillRect(x * c, y * c, c, c);
+  ctx.strokeStyle = 'rgba(245, 245, 250, 0.16)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 1; i < n; i++) {
+    // +0.5 puts a 1px line exactly on a pixel row, so it stays sharp.
+    const p = Math.round(i * c) + 0.5;
+    ctx.moveTo(p, 0);
+    ctx.lineTo(p, c * n);
+    ctx.moveTo(0, p);
+    ctx.lineTo(c * n, p);
   }
+  ctx.stroke();
   // Food: a gold dot.
   if (state.food) {
     ctx.fillStyle = color('--gold');
@@ -290,11 +312,14 @@ function draw() {
     ctx.arc(state.food.x * c + c / 2, state.food.y * c + c / 2, c * 0.38, 0, Math.PI * 2);
     ctx.fill();
   }
-  // Snake: body in the theme's second colour, head in the main one (red once it crashes).
+  // Snake: light tints of the theme colour so it stands out on the dark board; the head is the
+  // lightest (red once it crashes).
   const dead = state.status === 'dead';
   const pad = Math.max(1, c * 0.08);
+  const head = mix(primary, '#ffffff', 0.62);
+  const body = mix(primary, '#ffffff', 0.3);
   state.snake.forEach((cell, i) => {
-    ctx.fillStyle = i === 0 ? (dead ? color('--bad') : color('--primary')) : color('--primary-2');
+    ctx.fillStyle = i === 0 ? (dead ? color('--bad') : head) : body;
     roundRect(ctx, cell.x * c + pad, cell.y * c + pad, c - pad * 2, c - pad * 2, c * 0.28);
     ctx.fill();
   });
