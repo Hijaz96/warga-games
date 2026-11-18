@@ -31,10 +31,12 @@ Teka Kata uses the same boards as every Arked Warga game (`shared/leaderboard.js
 `arked_campus_rank` for Hari Ini, Keseluruhan and Kampus. The SQL is in the hub repo
 (`nullifye/arcade`, `supabase/arked.sql`).
 
-The database allows one Cabaran Harian round per player per day, at most 10,000 points and 260
-points a second per round, and one round every 10 s. The score is worked out in the browser
-(`js/score.js`) and the timer runs there too, so a determined cheater could fake them; those
-limits bound it. That's an acceptable trade-off for a casual game.
+The database allows one Cabaran Harian round per player per day, at most 6,000 points a round,
+and one round every 10 s. Time isn't limited separately: the formula already caps a round at
+130 points per hidden letter (4,670 for the longest phrase), and fast players solve a known
+phrase in under half a second a letter. The score is worked out in the browser (`js/score.js`)
+and the timer runs there too, so a determined cheater could fake them; the cap bounds it.
+That's an acceptable trade-off for a casual game.
 
 ## Deploy
 

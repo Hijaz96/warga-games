@@ -37,19 +37,31 @@ test('formatTime', () => {
   assert.equal(formatTime(600), '10:00');
 });
 
-// arked_record caps teka-kata rounds (hub repo, supabase/arked.sql: arked_games). Any real
-// round must pass: at most 10,000 points, and 260 points a second even at half a second a letter.
-test('every phrase scores within the server limits', async () => {
+// arked_record caps teka-kata rounds (hub repo, supabase/arked.sql: arked_games): at most 6,000
+// points, and 6,000 points a second. Every real round must pass, however fast: the best a phrase
+// can score is solving it in 1 second with no mistakes. (A player once solved 15 letters in 7 s,
+// 1,880 points, which an earlier 260-a-second limit wrongly refused.)
+const MAX_POINTS = 6000;
+const MAX_POINTS_PER_SEC = 6000;
+
+test('every phrase scores within the server limits, even solved in 1 second', async () => {
   const { PHRASES } = await import('../js/phrases.js');
   const { createPuzzle } = await import('../js/game.js');
   const { mulberry32 } = await import('../../shared/rng.js');
   for (const p of PHRASES) {
     for (let seed = 1; seed <= 20; seed++) {
       const h = createPuzzle(p.text, mulberry32(seed)).hiddenCount;
-      const fastest = Math.ceil(h / 2);
-      const best = computeScore(h, fastest, 0);
-      assert.ok(best <= 10000, `${p.id}: ${best} points`);
-      assert.ok(best <= fastest * 260, `${p.id}: ${best} points in ${fastest}s`);
+      for (let seconds = 1; seconds <= h * 8; seconds++) {
+        const best = computeScore(h, seconds, 0);
+        assert.ok(best <= MAX_POINTS, `${p.id}: ${best} points`);
+        assert.ok(best <= seconds * MAX_POINTS_PER_SEC, `${p.id}: ${best} points in ${seconds}s`);
+      }
     }
   }
+});
+
+test('the reported round (15 letters, 7 s, no mistakes) passes', () => {
+  const points = computeScore(15, 7, 0);
+  assert.equal(points, 1880);
+  assert.ok(points <= MAX_POINTS && points <= 7 * MAX_POINTS_PER_SEC);
 });
