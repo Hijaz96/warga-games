@@ -37,6 +37,7 @@ export const PHRASES = [
   { id: 25, cat: 'uitm', text: 'MARA ditubuhkan pada tahun 1966', fact: 'Majlis Amanah Rakyat (MARA) ditubuhkan pada tahun 1966 bagi menggantikan RIDA.' },
   { id: 26, cat: 'uitm', text: 'Pendidikan tinggi untuk anak bumiputera', fact: 'UiTM ditubuhkan untuk membuka peluang pendidikan tinggi kepada bumiputera.' },
   { id: 27, cat: 'uitm', text: 'Dari diploma hingga kedoktoran', fact: 'UiTM menawarkan program dari peringkat diploma sehingga kedoktoran falsafah (PhD).' },
+  { id: 28, cat: 'uitm', text: 'Program Asasi UiTM', fact: 'Program asasi seperti Asasi Sains dan Asasi Undang-undang menyediakan lepasan SPM untuk melanjutkan pengajian ke peringkat ijazah sarjana muda.' },
   { id: 29, cat: 'uitm', text: 'Kampus Dungun di Terengganu', fact: 'UiTM Cawangan Terengganu mempunyai kampus di Dungun.' },
   { id: 30, cat: 'uitm', text: 'Kampus Arau di Perlis', fact: 'UiTM Cawangan Perlis mempunyai kampus di Arau.' },
   { id: 31, cat: 'uitm', text: 'UiTM Melaka di Alor Gajah', fact: 'Kampus Alor Gajah menempatkan pentadbiran pusat UiTM Cawangan Melaka.' },
