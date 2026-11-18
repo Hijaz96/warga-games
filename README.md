@@ -8,6 +8,7 @@ AppsWarga app (hub repo: `nullifye/arcade`). Static site on GitHub Pages, no bui
 | Teka Kata (cryptogram) | [`teka-kata/`](teka-kata/) | https://nullifye.github.io/warga-games/teka-kata/ |
 | Ular (snake) | [`ular/`](ular/) | https://nullifye.github.io/warga-games/ular/ |
 | Duga Kata (5-letter word guess) | [`duga-kata/`](duga-kata/) | https://nullifye.github.io/warga-games/duga-kata/ |
+| Kejar Lapan (3D voxel runner) | [`kejar-lapan/`](kejar-lapan/) | https://nullifye.github.io/warga-games/kejar-lapan/ |
 
 The site root redirects to the hub.
 
@@ -15,7 +16,7 @@ The site root redirects to the hub.
 
 ```sh
 npm run serve   # http://localhost:8080/warga-games/ular/  (the hub at /arcade/ from ../arked)
-npm test        # node --test: shared/, teka-kata/, ular/, duga-kata/
+npm test        # node --test: shared/, teka-kata/, ular/, duga-kata/, kejar-lapan/
 ```
 
 ## Shared code (`shared/`)
@@ -68,3 +69,21 @@ The hub keeps its own copies of `appswarga.js`, `select.js`, `profile-options.js
 - Score: 1,000 / 800 / 600 / 450 / 300 / 200 for a win in 1–6 guesses, plus 2 a second under
   3 minutes; a loss is 0 and still counts as a play. Every round goes to `arked_record`.
 - Rules in `duga-kata/js/logic.js`, score in `score.js` (both unit-tested).
+
+## Kejar Lapan
+
+- A three-lane voxel runner through UiTM Shah Alam (Three.js 0.170.0, vendored in
+  `kejar-lapan/vendor/` with its licence; no CDN, no build step).
+- The campus clock runs from 07:55 to 8:00. Each landmark (Kolej Perindu, Menara SAAS, Masjid,
+  PTAR, DATC, FSKM, Kejuruteraan, round and round) is a checkpoint that adds time: +16 s, one
+  less each time, at least +8 s. Crash or reach 8:00 and the run ends.
+- Lompat (jump) kon, lubang, monyet; tunduk (slide) under palang; go round bas and kereta.
+  Swipe, arrow keys / WASD / Space, or the on-screen buttons (a setting).
+- The character comes from the profile (Pelajar, Staf, Alumni, Awam) and can be switched; items
+  only change look: points (+25), boost (5 s, smashes obstacles), shield (one hit), jam (+5 s).
+- Score: a point a metre, plus items, plus 200 a checkpoint; every run with points goes to
+  `arked_record` (at most 100,000 points and 300 a second). Distance shows in m, then km.
+- `js/sim.js` (fixed 60 Hz steps, swept collision) and `js/course.js` (seeded rows that always
+  leave a way through) are pure and unit-tested, including a bot that clears 4 km of 30 courses.
+  `js/render.js` draws the sim's state with merged voxel models and pools, so memory stays flat.
+- Tuning lives in `js/config.js`. `?debug` exposes `window.__kl` for browser tests.

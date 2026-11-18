@@ -1,0 +1,713 @@
+/* Kejar Lapan. Builds on ../shared/base.css (tokens, buttons, header, dialogs, leaderboard). */
+
+/* ---------- back to Arked (shared/arked-link.js) ---------- */
+#btn-close-app,
+#btn-hub {
+  display: none;
+}
+
+html.in-appswarga #btn-close-app,
+html.from-arked #btn-hub {
+  display: grid;
+}
+
+html.from-arked #btn-close-app {
+  display: none;
+}
+
+html.from-arked .profile-chip {
+  margin-right: auto;
+}
+
+/* ---------- home ---------- */
+.screen-home > .btn {
+  margin-top: 12px;
+}
+
+.kl-brand {
+  text-align: center;
+  margin: 18px 0 14px;
+  animation: rise 0.4s both ease-out;
+}
+
+.kl-brand img {
+  display: block;
+  margin: 0 auto 10px;
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+.kl-brand h1 {
+  font-size: clamp(2rem, 9vw, 2.6rem);
+  line-height: 1.05;
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.kl-brand h1 span {
+  color: var(--primary);
+}
+
+.kl-brand p {
+  color: var(--ink-2);
+  margin: 8px auto 0;
+  max-width: 32ch;
+}
+
+.kl-roles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.role-chip {
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 8px 2px 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.role-chip span {
+  font-size: 1.5rem;
+  line-height: 1.1;
+}
+
+.role-chip[aria-checked='true'] {
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.kl-mission {
+  text-align: center;
+  margin: 10px 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kl-mission strong {
+  font-size: 0.95rem;
+}
+
+.kl-mission small {
+  color: var(--ink-2);
+  font-size: 0.78rem;
+}
+
+.kl-settings {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.switch-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 0;
+  background: none;
+  text-align: left;
+  min-height: 54px;
+}
+
+.switch-row + .switch-row {
+  border-top: 1px solid var(--track);
+}
+
+.switch-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.switch-text small {
+  color: var(--ink-2);
+  font-size: 0.78rem;
+}
+
+.switch {
+  flex: none;
+  position: relative;
+  width: 50px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--key-off);
+  transition: background 0.2s;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s;
+}
+
+.switch-row[aria-checked='true'] .switch {
+  background: var(--primary);
+}
+
+.switch-row[aria-checked='true'] .switch::after {
+  transform: translateX(20px);
+}
+
+.kl-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 16px 0 0;
+}
+
+.kl-stats div {
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  border-radius: 14px;
+  padding: 10px 4px;
+  text-align: center;
+  min-width: 0;
+}
+
+.kl-stats dt {
+  font-size: 0.7rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.kl-stats dd {
+  margin: 2px 0 0;
+  font-weight: 800;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.screen-home .app-version {
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+/* ---------- game ---------- */
+.screen-game {
+  position: relative;
+  height: 100dvh;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #93c5fd;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.kl-stage,
+.kl-stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* HUD: panels on a dark glass, readable over the bright scene. */
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  padding: max(10px, env(safe-area-inset-top)) 12px 0;
+  color: #fff;
+}
+
+.hud-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.hud-panel {
+  background: rgba(24, 14, 46, 0.78);
+  border: 2px solid rgba(250, 204, 21, 0.45);
+  border-radius: 14px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  box-shadow: 0 3px 0 rgba(10, 5, 22, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.hud-panel small {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #e9d5ff;
+}
+
+.hud-score {
+  min-width: 88px;
+}
+
+.hud-score strong {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fde047;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-score span {
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-clock {
+  flex: 1;
+  align-items: center;
+  text-align: center;
+  min-width: 0;
+}
+
+.hud-clock small {
+  color: #fde047;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.hud-clock strong {
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-clock span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #6ee7b7;
+}
+
+.hud-clock.warn {
+  border-color: #fbbf24;
+}
+
+.hud-clock.warn span {
+  color: #fcd34d;
+}
+
+.hud-clock.danger {
+  border-color: #fb7185;
+  animation: pulse 0.6s ease-in-out infinite alternate;
+}
+
+.hud-clock.danger span,
+.hud-clock.danger strong {
+  color: #fda4af;
+}
+
+.hud-pause {
+  pointer-events: auto;
+  flex: none;
+  background: rgba(24, 14, 46, 0.78);
+  color: #fff;
+  border: 2px solid rgba(250, 204, 21, 0.45);
+}
+
+.hud-next {
+  margin: 8px auto 0;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(24, 14, 46, 0.7);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hud-next:empty {
+  display: none;
+}
+
+.hud-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.hud-shield {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #22d3ee;
+  color: #083344;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.hud-boost {
+  width: min(60vw, 220px);
+  height: 12px;
+  padding: 2px;
+  border-radius: 999px;
+  background: rgba(24, 14, 46, 0.78);
+  border: 2px solid #facc15;
+}
+
+.hud-boost i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f97316, #facc15);
+  transform-origin: left;
+}
+
+/* Checkpoint and pickup news, centred over the road. */
+.hud-toast {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  transform: translate(-50%, -50%);
+  padding: 8px 18px;
+  border-radius: 16px;
+  background: rgba(24, 14, 46, 0.82);
+  border: 2px solid #facc15;
+  color: #fde047;
+  font-weight: 800;
+  font-size: 1.15rem;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.hud-toast small {
+  display: block;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.hud-toast.show {
+  opacity: 1;
+  transform: translate(-50%, -60%);
+}
+
+/* On-screen buttons: lanes on the left thumb, jump / slide on the right. */
+.pad {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 14px calc(max(14px, env(safe-area-inset-bottom)) + 18px);
+  pointer-events: none;
+}
+
+.pad-group {
+  display: flex;
+  gap: 12px;
+  pointer-events: auto;
+}
+
+.pad-btn {
+  width: 62px;
+  height: 62px;
+  border-radius: 18px;
+  border: 3px solid #facc15;
+  background: rgba(46, 24, 89, 0.82);
+  color: #fff;
+  box-shadow: 0 4px 0 #713f12;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+  touch-action: manipulation;
+  transition: transform 0.06s, box-shadow 0.06s;
+}
+
+.pad-btn svg {
+  width: 26px;
+  height: 26px;
+}
+
+.pad-btn span {
+  font-size: 0.55rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.pad-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #713f12;
+  background: #facc15;
+  color: #2e1065;
+}
+
+.screen-game.no-pad .pad {
+  display: none;
+}
+
+/* Ready / paused: over the frozen scene. */
+.kl-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8, 6, 20, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.kl-overlay-card {
+  width: min(100%, 320px);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 22px;
+  padding: 20px 18px 0;
+  text-align: center;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 8px;
+  padding-bottom: 18px;
+}
+
+.kl-overlay-title {
+  margin: 0;
+  font-weight: 800;
+  font-size: 1.4rem;
+}
+
+.kl-overlay-text {
+  margin: 0 0 6px;
+  color: var(--ink-2);
+  font-size: 0.9rem;
+}
+
+.screen-game.over .hud,
+.screen-game.over .pad {
+  opacity: 0.35;
+  transition: opacity 0.4s;
+}
+
+/* Short phones: smaller buttons. */
+@media (max-height: 640px) {
+  .pad-btn {
+    width: 54px;
+    height: 54px;
+  }
+
+  .hud-clock strong {
+    font-size: 1.2rem;
+  }
+}
+
+/* ---------- result ---------- */
+#screen-result .bar {
+  margin-bottom: 12px;
+}
+
+@media (min-height: 700px) {
+  #screen-result::after {
+    content: '';
+    flex: none;
+    height: 56px;
+  }
+}
+
+.kl-result {
+  margin: auto 0;
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 22px 18px 18px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  animation: rise 0.4s ease both;
+}
+
+.kl-result-badge {
+  font-size: 2.8rem;
+  line-height: 1;
+}
+
+.kl-result h2 {
+  margin: 8px 0 2px;
+  font-size: 1.7rem;
+  font-weight: 800;
+}
+
+.res-sub {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 0.88rem;
+}
+
+.res-distance {
+  margin: 16px 0 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.res-distance small {
+  font-size: 0.75rem;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.res-distance strong {
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1.05;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.res-record {
+  margin-top: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--gold-2), var(--gold));
+  color: var(--gold-ink);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.res-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 12px 0 10px;
+}
+
+.res-stats div {
+  background: var(--bg-2);
+  border-radius: 14px;
+  padding: 10px 4px;
+}
+
+.res-stats div.hl {
+  background: linear-gradient(180deg, var(--gold-2), var(--gold));
+  color: var(--gold-ink);
+}
+
+.res-stats dt {
+  font-size: 0.72rem;
+  opacity: 0.8;
+}
+
+.res-stats dd {
+  margin: 2px 0 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.res-landmarks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  margin: 0 0 10px;
+}
+
+.res-landmarks span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+
+.res-submit {
+  min-height: 24px;
+  font-size: 0.88rem;
+  color: var(--ink-2);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.res-submit.ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.res-submit.err {
+  color: var(--bad);
+}
+
+.res-submit.busy span::after {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-left: 6px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.res-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.res-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.res-row .btn {
+  padding-inline: 10px;
+  white-space: nowrap;
+  font-size: 0.95rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  to { transform: scale(1.04); }
+}
