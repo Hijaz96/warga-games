@@ -2,7 +2,7 @@
 // Everything is built once (models.js) and pooled, so a long run doesn't grow memory.
 import * as THREE from '../vendor/three.module.min.js';
 import { createTrailEffect } from './trails.js';
-import { LANES } from './config.js';
+import { LANES, SHIELD } from './config.js';
 import { checkpointAt, landmarkFor } from './course.js';
 import { sliding } from './sim.js';
 import {
@@ -432,6 +432,13 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
     if (run.shield) {
       p.shield.rotation.y = now * 0.002;
       p.shield.scale.setScalar(1 + Math.sin(now * 0.008) * 0.025);
+      const ending = run.shieldT <= SHIELD.warning;
+      const fade = ending ? Math.max(0, run.shieldT / SHIELD.warning) : 1;
+      // Use simulation time so the warning freezes during a pause. Reduced motion only fades.
+      const blink = ending && !reducedMotion() ? (Math.sin(run.t * Math.PI * 4) >= 0 ? 1 : 0.18) : 1;
+      for (const part of p.shield.children) {
+        part.material.opacity = (part.material.wireframe ? 0.45 : 0.1) * fade * blink;
+      }
     }
     if (p === player) {
       blob.position.x = run.x;

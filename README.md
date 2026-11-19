@@ -129,14 +129,14 @@ The hub keeps its own copies of `appswarga.js`, `select.js`, `profile-options.js
 - Lompat (jump) kon, lubang, monyet; tunduk (slide) under palang; go round bas and kereta.
   Swipe, arrow keys / WASD / Space, or the on-screen buttons (a setting).
 - The character comes from the profile (Pelajar, Staf, Alumni, Awam) and can be switched; items
-  only change look: points (+25), boost (5 s, smashes obstacles), shield (one hit), jam (+5 s).
+  only change look: points (+25), boost (5 s, smashes obstacles), shield (10 active seconds or one hit; refreshes on pickup, blinks and fades during the final 3 seconds), jam (+5 s).
   Every 12 obstacle rows, one guaranteed +5 s clock appears in a seeded random lane.
   It must be collected in that lane; missing it grants no time. A minimum 60 m support gap
   leaves room to steer in and back out, even while boosted. This replaces that gap's random items,
   while other gaps retain their usual pickups. The clock start/cap and checkpoint bonuses are
   unchanged. A clock-seeking test player clears 12 km on all 30 audited endless seeds using real pickups
   and ordinary controls; ignoring clocks runs out of time before the goal.
-  Course identity is now `kl-4`, so earlier ghost recordings are ignored after the route change;
+  Course identity is now `kl-5`, so earlier ghost recordings are ignored after the route change;
   achievement progress and best-distance stats remain intact.
 - The avatar card also has an image-share icon in its top-right corner. It exports the
   current role, equipped cosmetics, player name and personal totals (best score, best distance,

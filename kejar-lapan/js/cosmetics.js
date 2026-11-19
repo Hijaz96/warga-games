@@ -2,7 +2,7 @@
 // Milestone access is enabled by default; existing progress remains intact.
 export const COSMETICS_TEST_UNLOCK = false;
 
-export const SLOTS = { head: 'Kepala', face: 'Muka', outfit: 'Badan', back: 'Belakang', hand: 'Tangan', trail: 'Kaki · Jejak larian' };
+export const SLOTS = { head: 'Kepala', face: 'Muka', outfit: 'Badan', back: 'Belakang', hand: 'Tangan', trail: 'Jejak Larian' };
 export const COSMETICS = [
   { id: 'bag-mint', slot: 'back', name: 'Beg Bulat', design: 'round', icon: '🩷', colour: 0xf472b6, metric: 'played', target: 100 },
   { id: 'bag-gold', slot: 'back', name: 'Beg Kucing Emas', design: 'cat', icon: '🐱', colour: 0xfbbf24, metric: 'totalDistance', target: 50000 },

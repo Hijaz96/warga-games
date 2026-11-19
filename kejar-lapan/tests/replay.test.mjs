@@ -15,7 +15,7 @@ function recordedRun() {
     recordTick(recording, actions);
     step(run, actions);
     states.push({ x: run.x, y: run.y, slideT: run.slideT, distance: run.distance, score: run.score,
-      status: run.status, timeLeft: run.timeLeft, boostT: run.boostT, shield: run.shield });
+      status: run.status, timeLeft: run.timeLeft, boostT: run.boostT, shield: run.shield, shieldT: run.shieldT });
   }
   recording.result = { status: run.status, distance: run.distance, score: run.score, t: run.t };
   return { plan, recording, states };

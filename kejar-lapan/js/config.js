@@ -24,6 +24,8 @@ export const DROP_SPEED = -26;
 export const SPEED = { start: 22, max: 40, perMetre: 0.006 };
 /** Boost (pecut): speed multiplier and length. Obstacles hit while boosting are smashed. */
 export const BOOST = { factor: 1.5, time: 5 };
+/** Shield protects one hit for at most ten active-play seconds; pickups refresh it. */
+export const SHIELD = { time: 10, warning: 3 };
 
 /**
  * Obstacles. `len` along the road and `w` across it make the hitbox; `clear` is how to get

@@ -11,6 +11,7 @@ import {
   SLIDE_TIME,
   DROP_SPEED,
   BOOST,
+  SHIELD,
   OBSTACLES,
   ITEMS,
   PICKUP,
@@ -52,6 +53,7 @@ export function createRun({ seed = 1, role = 'pelajar', finishAt = null } = {}) 
     jumpBuffer: 0,
     boostT: 0,
     shield: false,
+    shieldT: 0,
     timeLeft: CLOCK.start,
     bonus: 0, // points from items and checkpoints
     score: 0,
@@ -101,7 +103,7 @@ function blocks(s, o) {
 /**
  * Advances the run by `dt` (normally STEP) after applying `actions` ('left', 'right', 'jump',
  * 'slide'). Returns what happened, for sound, haptics and effects: { type: 'jump' | 'land' |
- * 'lane' | 'slide' | 'pickup' | 'smash' | 'shieldBreak' | 'checkpoint' | 'crash' | 'late', … }.
+ * 'lane' | 'slide' | 'pickup' | 'smash' | 'shieldBreak' | 'shieldExpire' | 'checkpoint' | 'crash' | 'late', … }.
  */
 export function step(s, actions = [], dt = STEP) {
   const events = [];
@@ -139,6 +141,14 @@ export function step(s, actions = [], dt = STEP) {
   s.distance = d1;
   s.t += dt;
   s.boostT = Math.max(0, s.boostT - dt);
+  if (s.shield) {
+    s.shieldT = Math.max(0, s.shieldT - dt);
+    if (s.shieldT < 1e-9) {
+      s.shieldT = 0;
+      s.shield = false;
+      events.push({ type: 'shieldExpire' });
+    }
+  }
   extendCourse(s.course, d1 + LOOKAHEAD);
   pruneCourse(s.course, d1 - 30);
 
@@ -155,6 +165,7 @@ export function step(s, actions = [], dt = STEP) {
       events.push({ type: 'smash', obstacle: o });
     } else if (s.shield) {
       s.shield = false;
+      s.shieldT = 0;
       events.push({ type: 'shieldBreak', obstacle: o });
     } else {
       s.status = 'crashed';
@@ -173,7 +184,7 @@ export function step(s, actions = [], dt = STEP) {
     s.picked[it.kind] += 1;
     s.bonus += ITEMS[it.kind].value;
     if (it.kind === 'boost') s.boostT = BOOST.time;
-    else if (it.kind === 'shield') s.shield = true;
+    else if (it.kind === 'shield') { s.shield = true; s.shieldT = SHIELD.time; }
     else if (it.kind === 'time') s.timeLeft = Math.min(CLOCK.max, s.timeLeft + ITEMS.time.seconds);
     events.push({ type: 'pickup', item: it });
   }

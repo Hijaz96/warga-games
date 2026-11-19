@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { formatDistance, formatTime, formatClock } from '../js/score.js';
 import { createRun, step } from '../js/sim.js';
-import { SERVER, LANES, CLOCK, STEP } from '../js/config.js';
+import { SERVER, LANES, CLOCK, STEP, SHIELD } from '../js/config.js';
 import { botActions } from './bot.mjs';
 
 test('distance shows metres below a kilometre, then km', () => {
@@ -40,6 +40,7 @@ test('even a perfect boosted run scores under the server limit per second', () =
       s.timeLeft = 1e6;
       s.boostT = 10;
       s.shield = true;
+      s.shieldT = SHIELD.time;
       // Teleport to the next item's lane: takes every item.
       const next = s.course.items.filter((i) => !i.taken && i.at >= s.distance).sort((a, b) => a.at - b.at)[0];
       if (next) {

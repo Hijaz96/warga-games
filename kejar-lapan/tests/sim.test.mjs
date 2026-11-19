@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRun, step, nextCheckpoint, runSeconds } from '../js/sim.js';
 import { checkpointAt, checkpointTime } from '../js/course.js';
-import { CLOCK, LANES, STEP, OBSTACLES, JUMP_BUFFER } from '../js/config.js';
+import { CLOCK, LANES, STEP, OBSTACLES, JUMP_BUFFER, SHIELD } from '../js/config.js';
 import { botActions } from './bot.mjs';
 
 /** A run with an empty course except the obstacles given: [{ at, lane, type }]. */
@@ -86,10 +86,11 @@ test('a shield takes exactly one hit', () => {
   const s = runWith([
     { at: 30, lane: 1, type: 'cone' },
     { at: 60, lane: 1, type: 'cone' },
-  ], { shield: true });
+  ], { shield: true, shieldT: SHIELD.time });
   const events = runTo(s, 45);
   assert.equal(s.status, 'running');
   assert.equal(s.shield, false);
+  assert.equal(s.shieldT, 0);
   assert.ok(events.some((e) => e.type === 'shieldBreak'));
   runTo(s, 70);
   assert.equal(s.status, 'crashed');
@@ -204,4 +205,51 @@ test('a support clock gives +5 s only when its actual lane is reached', () => {
   assert.equal(collected.course.items[0].taken, true);
   step(collected);
   assert.equal(collected.picked.time, 1);
+});
+
+
+test('shield pickup expires after ten active seconds and announces expiry only once', () => {
+  const run = runWith([]);
+  run.course.items = [{ id: 2000, lane: 1, at: 1, kind: 'shield', taken: false }];
+  step(run);
+  assert.equal(run.shieldT, SHIELD.time);
+  assert.equal(run.shield, true);
+  const events = [];
+  for (let i = 0; i < SHIELD.time / STEP; i++) events.push(...step(run));
+  assert.equal(run.shield, false);
+  assert.equal(run.shieldT, 0);
+  assert.equal(events.filter((event) => event.type === 'shieldExpire').length, 1);
+  assert.equal(step(run).some((event) => event.type === 'shieldExpire'), false);
+});
+
+test('another shield refreshes the countdown instead of adding duration', () => {
+  const run = runWith([], { shield: true, shieldT: 4 });
+  run.course.items = [{ id: 2000, lane: 1, at: 1, kind: 'shield', taken: false }];
+  step(run);
+  assert.equal(run.shieldT, SHIELD.time);
+  step(run);
+  assert.ok(run.shieldT < SHIELD.time);
+  assert.ok(run.shieldT > SHIELD.time - 0.1);
+});
+
+test('boost smashes keep the shield but its timer still expires normally', () => {
+  const run = runWith([{ at: 10, lane: 1, type: 'cone' }], { boostT: 5, shield: true, shieldT: 2 });
+  const events = [];
+  while (run.distance < 20) events.push(...step(run));
+  assert.equal(run.status, 'running');
+  assert.equal(run.shield, true);
+  assert.ok(run.shieldT < 2);
+  assert.ok(events.some((event) => event.type === 'smash'));
+  assert.equal(events.some((event) => event.type === 'shieldBreak'), false);
+  while (run.shield) step(run);
+  assert.ok(run.boostT > 0);
+  assert.equal(run.shieldT, 0);
+});
+
+test('an expired shield cannot protect against the next obstacle', () => {
+  const run = runWith([{ at: 30, lane: 1, type: 'cone' }], { shield: true, shieldT: 0.1 });
+  while (run.status === 'running' && run.distance < 40) step(run);
+  assert.equal(run.status, 'crashed');
+  assert.equal(run.shield, false);
+  assert.equal(run.shieldT, 0);
 });
