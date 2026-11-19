@@ -1,13 +1,20 @@
 // A self-contained PNG result card. Files are prepared before the share-button gesture.
+import { NON_UITM_CAMPUS } from '../../shared/profile-options.js';
 import { createPreview } from './preview.js';
 import { ROLES } from './config.js';
 import { MODE_LABELS } from './modes.js';
 import { formatDistance, formatTime, formatPoints, formatDate, formatClock } from './score.js';
 
+function profileCampus(profile) {
+  const campus = typeof profile?.campus === 'string' ? profile.campus.trim() : '';
+  return profile?.userType === 'awam' || campus === NON_UITM_CAMPUS ? '' : campus;
+}
+
 export function resultCardContent(result) {
   return {
     nickname: result.profile?.nickname || ROLES[result.role].label,
     role: ROLES[result.role].label,
+    campus: profileCampus(result.profile),
     mode: `${MODE_LABELS[result.plan.mode]}${result.plan.day ? ` · ${formatDate(result.plan.day)}` : ''}`,
     title: result.reason === 'arrived' ? 'SAMPAI TEPAT MASA!' : result.reason === 'crash' ? 'TERLANGGAR!' : 'DAH PUKUL 8:00!',
     destination: result.plan.destination?.short ?? 'Tanpa Henti',
@@ -24,6 +31,7 @@ export function avatarCardContent(avatar) {
   return {
     nickname: avatar.profile?.nickname || ROLES[avatar.role].label,
     role: ROLES[avatar.role].label,
+    campus: profileCampus(avatar.profile),
     mode: 'WATAK & PENCAPAIAN',
     title: 'GAYA KAMPUS SAYA',
     destination: ROLES[avatar.role].mission,
@@ -124,7 +132,7 @@ async function createCardImage(data, appearance, filename) {
   box(70, 1250, 940, 2, '#846092');
   text('ARKED WARGA', 74, 1283, 18, '#facc15', 800);
   ctx.textAlign = 'right';
-  text('UiTM SHAH ALAM', 1006, 1283, 18, '#c4b5fd', 600);
+  text(data.campus, 1006, 1283, 18, '#c4b5fd', 600, 540);
   ctx.textAlign = 'left';
   const blob = await new Promise((resolve, reject) => canvas.toBlob((value) => value ? resolve(value) : reject(new Error('PNG encoding failed')), 'image/png'));
   return new File([blob], filename, { type: 'image/png' });

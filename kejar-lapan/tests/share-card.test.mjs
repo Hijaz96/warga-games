@@ -54,3 +54,13 @@ test('avatar card uses current identity and personal totals without inventing a 
   assert.equal(card.cells[3][1], '150');
   assert.equal(avatarCardContent({ role: 'pelajar' }).cells[3][1], '0');
 });
+
+test('share cards use the saved campus instead of a fixed Shah Alam footer', () => {
+  const profile = { nickname: 'Mira', userType: 'pelajar', campus: 'UiTM Puncak Alam' };
+  assert.equal(resultCardContent({ ...result, profile }).campus, 'UiTM Puncak Alam');
+  assert.equal(avatarCardContent({ role: 'pelajar', profile }).campus, 'UiTM Puncak Alam');
+  for (const missing of [undefined, {}, { campus: 'Bukan warga UiTM' }, { campus: 'UiTM Puncak Alam', userType: 'awam' }]) {
+    assert.equal(resultCardContent({ ...result, profile: missing }).campus, '');
+    assert.equal(avatarCardContent({ role: 'awam', profile: missing }).campus, '');
+  }
+});

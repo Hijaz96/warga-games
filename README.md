@@ -134,6 +134,9 @@ The hub keeps its own copies of `appswarga.js`, `select.js`, `profile-options.js
   without image sharing download the PNG. Cancelling the share sheet does not download anything.
   The text-only AppsWarga share bridge is not used for this image flow. `js/share-card.js` owns
   rendering and delivery, and temporary portrait rendering releases its WebGL resources.
+  Both card footers use the player's saved campus, omitted for public/non-UiTM or missing-campus
+  profiles. Both share buttons show a spinner and busy state while preparing the PNG or awaiting
+  the native share promise, then reset after success, cancellation or failure.
 - Score: a point a metre, plus items, plus 200 a checkpoint; every run with points goes to
   `arked_record` (at most 100,000 points and 300 a second). Distance shows in m, then km.
 - `js/sim.js` (fixed 60 Hz steps, swept collision) and `js/course.js` (seeded rows that always

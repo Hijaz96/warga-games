@@ -329,6 +329,12 @@ async function updatePreview() {
   prepareAvatarImage(role, selected);
 }
 
+function setShareBusy(button, busy) {
+  button.disabled = busy;
+  button.classList.toggle('share-loading', busy);
+  button.setAttribute('aria-busy', String(busy));
+}
+
 function prepareAvatarImage(role, cosmetics) {
   const snapshot = { role, cosmetics, profile: { ...loadProfile() }, stats: stats() };
   const key = JSON.stringify(snapshot);
@@ -338,8 +344,7 @@ function prepareAvatarImage(role, cosmetics) {
   clearTimeout(avatarShareTimer);
   avatarShare = null;
   const button = $('#preview-share');
-  button.disabled = true;
-  button.setAttribute('aria-busy', 'true');
+  setShareBusy(button, true);
   button.title = 'Menyediakan imej watak…';
   // Coalesce quick equipment changes and prepare the final image before the share gesture.
   avatarShareTimer = setTimeout(async () => {
@@ -355,8 +360,7 @@ function prepareAvatarImage(role, cosmetics) {
       avatarShareKey = ''; // The button can retry without changing equipment.
     } finally {
       if (serial === avatarShareSerial) {
-        button.disabled = false;
-        button.setAttribute('aria-busy', 'false');
+        setShareBusy(button, false);
         button.title = avatarShare ? 'Kongsi imej watak' : 'Cuba imej watak semula';
       }
     }
@@ -371,12 +375,18 @@ async function shareAvatar() {
     return;
   }
   const button = $('#preview-share');
-  button.disabled = true;
+  setShareBusy(button, true);
+  button.title = 'Membuka perkongsian…';
   try {
     const outcome = await asset.share(asset.file);
     if (outcome === 'downloaded') toast('Imej watak dimuat turun.');
   } catch { toast('Imej watak tidak dapat dikongsi. Cuba semula.'); }
-  finally { if (asset === avatarShare) button.disabled = false; }
+  finally {
+    if (asset === avatarShare) {
+      setShareBusy(button, false);
+      button.title = 'Kongsi imej watak';
+    }
+  }
 }
 
 // ---------- the run ----------
@@ -730,13 +740,13 @@ async function submitResult(r) {
 async function prepareResultImage(r) {
   const button = $('#res-share');
   if (r.shareFile) {
-    button.disabled = false;
+    setShareBusy(button, false);
     button.textContent = 'Kongsi';
     return true;
   }
   if (r.sharePreparing) return r.sharePreparing;
-  button.disabled = true;
-  button.textContent = 'Menyediakan imej…';
+  setShareBusy(button, true);
+  button.textContent = 'Menyediakan…';
   r.sharePreparing = (async () => {
     try {
       const { createResultImage, shareResultImage } = await import('./share-card.js');
@@ -749,7 +759,7 @@ async function prepareResultImage(r) {
     } finally {
       r.sharePreparing = null;
       if (lastResult === r && document.body.dataset.screen === 'result') {
-        button.disabled = false;
+        setShareBusy(button, false);
         button.textContent = r.shareFile ? 'Kongsi' : 'Cuba imej semula';
       }
     }
@@ -766,14 +776,20 @@ async function shareResult() {
     return;
   }
   const button = $('#res-share');
-  button.disabled = true;
+  setShareBusy(button, true);
+  button.textContent = 'Membuka…';
   try {
     // File is already prepared: call the native share API within this button gesture.
     const outcome = await r.shareImage(r.shareFile);
     if (outcome === 'downloaded') toast('Imej keputusan dimuat turun.');
   } catch {
     toast('Imej tidak dapat dikongsi. Cuba semula.');
-  } finally { if (lastResult === r) button.disabled = false; }
+  } finally {
+    if (lastResult === r) {
+      setShareBusy(button, false);
+      button.textContent = 'Kongsi';
+    }
+  }
 }
 
 // ---------- leaderboard ----------
