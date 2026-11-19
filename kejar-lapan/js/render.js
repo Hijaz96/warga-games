@@ -1,6 +1,7 @@
 // Kejar Lapan: drawing a run with Three.js. Reads the sim's state each frame; never changes it.
 // Everything is built once (models.js) and pooled, so a long run doesn't grow memory.
 import * as THREE from '../vendor/three.module.min.js';
+import { createTrailEffect } from './trails.js';
 import { LANES } from './config.js';
 import { checkpointAt, landmarkFor } from './course.js';
 import { sliding } from './sim.js';
@@ -130,6 +131,7 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
   // The player, rebuilt when the role changes.
   let player = null;
   let playerRole = null;
+  let cosmetics = {};
   let ghostPlayer = null;
   let ghostRole = null;
   function syncGhost(run, ghost, now) {
@@ -175,11 +177,21 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
 
   function setRole(role) {
     if (playerRole === role) return;
-    if (player) scene.remove(player.group);
-    player = buildPlayer(role);
+    if (player) {
+      scene.remove(player.group);
+      // Player geometry is unique; keep the shared voxel material alive.
+      player.group.traverse((obj) => {
+        if (!obj.isMesh) return;
+        obj.geometry.dispose();
+        if (obj.material !== voxelMat) obj.material.dispose();
+      });
+    }
+    player = buildPlayer(role, cosmetics);
     playerRole = role;
     scene.add(player.group);
   }
+
+  const trailEffect = createTrailEffect(scene);
 
   // Pools.
   const obstaclePool = pool(scene, (key) => {
@@ -257,7 +269,10 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
   }
 
   /** Clears every pooled object, ready for a new run. */
-  function reset() {
+  function reset(equipped = {}) {
+    cosmetics = equipped;
+    playerRole = null;
+    trailEffect.reset();
     for (const [, v] of shownObstacles) obstaclePool.release(v.key, v.obj);
     for (const [, v] of shownItems) itemPool.release(v.key, v.obj);
     shownObstacles.clear();
@@ -454,6 +469,7 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
     syncLandmarks(run);
     animatePlayer(run, moving ? now : now * 0.25);
     syncGhost(run, ghost, ghost ? ghost.t * 1000 : now);
+    trailEffect.draw(run, cosmetics.trail, moving, reducedMotion());
     animateParticles(dt);
     dust.rotation.y += dt * 0.04;
 

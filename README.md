@@ -89,10 +89,51 @@ The hub keeps its own copies of `appswarga.js`, `select.js`, `profile-options.js
   latest daily record and one record per destination role are retained. Course identities are
   versioned in `js/modes.js`; bump `COURSE_VERSION` after physics, tuning or generation changes.
   The existing leaderboards continue to aggregate scores from all modes.
+- **Almari Gaya**: eighteen local milestone rewards across backpacks, outfits, running trails,
+  and accessories. Game-count rewards require 100/150/300/500 completed games; arrival rewards require 100/250 successful arrivals. Earn rewards through completed games, best single-run distance, cumulative distance, active
+  play time (60/120/240 minutes), checkpoints, successful arrivals and collected items;
+  existing run counts and distance records count too. Equip one unlocked item per body position (head, face, body, back, hand, foot effects),
+  or keep the original look. All roles and modes share progress on this device; selections
+  survive reloads and new unlocks appear on the result screen. The rotating live wardrobe preview
+  shows the same models as the game: pink round and cat-face bags; fire, stars, rainbow and
+  flying-frost trails; glasses, floating golden halo, helmet, brimmed hat, full-face mask, handheld star wand, briefcase, trident, jetpack and crossed back
+  katanas. Body rewards are a wide-sleeved shinigami-style robe and a pocketed expedition vest,
+  with distinct torso and sleeve geometry in both the avatar and isolated cards. Saved beard
+  selections become the full-face mask; old body item IDs remain valid with the new milestone thresholds. Headwear replaces default hats, the wand replaces default handheld props, and katanas
+  share the back slot with bags, so only one back item is equipped. Existing cosmetic IDs are preserved; removed sling-bag selections fall back to the original look. Cosmetics only reach the renderer:
+  speed, jumps, collision bounds, power-ups, scores and replay rules remain identical. Trails
+  use the same fixed mesh emitter in-game and in the wardrobe (geometry, lifetime and animation).
+  The wardrobe keeps its avatar on a round pedestal and views equipped trails from behind,
+  at the same world size and spacing as the game, with no compression or cropping of emitter samples; reduced motion hides effects in both views. Option cards show isolated cosmetic
+  models with no character in compact 48 px thumbnails, using one shared thumbnail renderer rather than a WebGL context per card.
+  Rotation buttons show arrow icons and retain accessible labels.
+  The role mission and item labels sit between the role choices and avatar preview, which remains visible while switching
+  between **Mod Permainan** and **Almari Gaya** tabs. New players start with all 18 rewards locked;
+  locked cards show only a generic question-mark image and milestone progress, revealing the item
+  name and model after earning it. Previously saved test equipment cannot bypass these requirements.
+  Folder-shaped tabs and beveled inventory cards use a bare pixel question mark; equipped cards
+  show a corner checkmark. The wardrobe displays totals for games, distance, minutes, checkpoints,
+  arrivals and pickups. New cumulative counters start from zero for existing profiles, since older
+  saves did not record them; existing game counts and best distances are retained. Completed runs
+  record simulation seconds, so pause time, menus and background time do not count.
+  A hidden rotation code (left, right, right, left, left, left, right within ten seconds) unlocks
+  all cosmetics for the current page session only, without changing stats or scores. Reloading
+  or closing the page restores normal milestone access; old persistent cheat flags are ignored.
+  Backgrounding or leaving home resets partial input. `COSMETICS_TEST_UNLOCK` remains `false`; milestones live in `js/cosmetics.js`.
 - Lompat (jump) kon, lubang, monyet; tunduk (slide) under palang; go round bas and kereta.
   Swipe, arrow keys / WASD / Space, or the on-screen buttons (a setting).
 - The character comes from the profile (Pelajar, Staf, Alumni, Awam) and can be switched; items
   only change look: points (+25), boost (5 s, smashes obstacles), shield (one hit), jam (+5 s).
+- The avatar card also has an image-share icon in its top-right corner. It exports the
+  current role, equipped cosmetics, player name and personal totals (best score, best distance,
+  active play time, completed games), without requiring a run. Images refresh after equipment,
+  role, profile or progress changes; rapid changes are coalesced and stale renders discarded.
+- **Kongsi** exports a vertical 1080×1350 PNG game card with a chamfered gold frame and single action-figure portrait with the run's captured player name,
+  equipped avatar in one three-quarter action pose, outcome, mode, campus clock, score, distance, duration and
+  checkpoints. The image is prepared before the button tap for native file sharing; browsers
+  without image sharing download the PNG. Cancelling the share sheet does not download anything.
+  The text-only AppsWarga share bridge is not used for this image flow. `js/share-card.js` owns
+  rendering and delivery, and temporary portrait rendering releases its WebGL resources.
 - Score: a point a metre, plus items, plus 200 a checkpoint; every run with points goes to
   `arked_record` (at most 100,000 points and 300 a second). Distance shows in m, then km.
 - `js/sim.js` (fixed 60 Hz steps, swept collision) and `js/course.js` (seeded rows that always

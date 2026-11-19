@@ -198,12 +198,57 @@ const OUTFITS = {
   awam: { shirt: 0x16a34a, sleeve: 0x16a34a, pants: 0x1e40af, shoes: 0xf1f5f9 },
 };
 
+// Shared clothing geometry: both worn models and isolated wardrobe cards use these shapes.
+function outfitTorsoBoxes(design) {
+  if (design === 'robe') return [
+    [0.82, 0.92, 0.5, 0, 0, 0, 0x18181b],
+    [0.46, 0.8, 0.56, -0.25, -0.78, 0, 0x18181b],
+    [0.46, 0.8, 0.56, 0.25, -0.78, 0, 0x18181b],
+    [0.88, 0.17, 0.56, 0, -0.24, 0, 0xf1f5f9],
+    [0.16, 0.13, 0.58, 0.1, -0.25, 0, 0xe2e8f0],
+    ...[-1, 1].flatMap((side) => [
+      [0.13, 0.18, 0.04, side * 0.2, 0.39, -0.27, 0xf8fafc],
+      [0.13, 0.18, 0.04, side * 0.14, 0.24, -0.27, 0xf8fafc],
+      [0.13, 0.18, 0.04, side * 0.08, 0.09, -0.27, 0xf8fafc],
+    ]),
+    [0.28, 0.28, 0.03, 0, 0.18, 0.27, 0xf1f5f9],
+    [0.15, 0.15, 0.04, 0, 0.18, 0.29, 0x18181b],
+  ];
+  if (design === 'vest') return [
+    [0.76, 0.92, 0.44, 0, 0, 0, 0xe2e8f0],
+    [0.34, 0.82, 0.12, -0.22, -0.02, -0.27, 0x4d7c0f],
+    [0.34, 0.82, 0.12, 0.22, -0.02, -0.27, 0x4d7c0f],
+    [0.84, 0.84, 0.1, 0, 0, 0.27, 0x4d7c0f],
+    ...[-1, 1].flatMap((side) => [
+      [0.26, 0.24, 0.13, side * 0.22, -0.23, -0.38, 0x365314],
+      [0.28, 0.06, 0.15, side * 0.22, -0.09, -0.39, 0x84cc16],
+      [0.24, 0.16, 0.1, side * 0.22, 0.22, -0.36, 0x365314],
+    ]),
+    [0.08, 0.68, 0.05, 0, 0, -0.28, 0xfacc15],
+    [0.84, 0.1, 0.54, 0, -0.44, 0, 0x451a03],
+  ];
+  return null;
+}
+function outfitSleeveBoxes(design) {
+  if (design === 'robe') return [
+    [0.44, 0.68, 0.46, 0, -0.28, 0, 0x18181b],
+    [0.46, 0.08, 0.48, 0, -0.6, 0, 0xf1f5f9],
+  ];
+  if (design === 'vest') return [
+    [0.26, 0.24, 0.28, 0, -0.08, 0, 0xe2e8f0],
+    [0.22, 0.5, 0.22, 0, -0.45, 0, SKIN],
+  ];
+  return null;
+}
+
 /**
  * The player for a role, split at the joints so it can run: returns the group and its pivots.
  * Faces −z (the way it runs).
  */
-export function buildPlayer(role) {
-  const o = OUTFITS[role] ?? OUTFITS.pelajar;
+export function buildPlayer(role, cosmetics = {}) {
+  const o = { ...(OUTFITS[role] ?? OUTFITS.pelajar) };
+  const outfit = cosmetics.outfit?.design;
+  if (outfit === 'robe') o.pants = 0x18181b;
   const group = new THREE.Group();
   const body = new THREE.Group(); // tilts and squashes for slides
   group.add(body);
@@ -212,12 +257,13 @@ export function buildPlayer(role) {
     [0.76, 0.92, 0.44, 0, 0, 0, o.shirt],
     [0.42, 0.14, 0.46, 0, 0.44, 0, 0xf1f5f9], // collar
   ];
-  if (role === 'pelajar') {
+  if (outfitTorsoBoxes(outfit)) {
+    torsoBoxes.splice(0, torsoBoxes.length, ...outfitTorsoBoxes(outfit));
+  } else if (role === 'pelajar') {
     torsoBoxes.push(
       [0.14, 0.48, 0.46, 0, 0.15, 0, 0xfacc15], // lanyard
       [0.24, 0.3, 0.48, 0, -0.08, 0, 0xf1f5f9], // matric card
-      [0.68, 0.78, 0.34, 0, 0.04, 0.38, 0xfacc15], // backpack
-      [0.48, 0.35, 0.1, 0, -0.1, 0.56, 0x3b0764],
+
     );
   } else if (role === 'staf') {
     torsoBoxes.push(
@@ -239,10 +285,95 @@ export function buildPlayer(role) {
       [0.2, 0.26, 0.48, 0.18, -0.12, 0, 0xfacc15], // visitor pass
     );
   }
+  if (!cosmetics.back && role === 'pelajar') {
+    torsoBoxes.push(
+      [0.68, 0.78, 0.34, 0, 0.04, 0.38, 0xfacc15],
+      [0.48, 0.35, 0.1, 0, -0.1, 0.56, 0x3b0764],
+    );
+  }
   const torso = new THREE.Group();
   torso.position.y = 1.38;
   torso.add(mesh(voxels(torsoBoxes)));
   body.add(torso);
+  const bag = cosmetics.back?.design ? cosmetics.back : null;
+  if (bag) {
+    const bagGroup = new THREE.Group();
+    bagGroup.name = `cosmetic-bag-${bag.design}`;
+    torso.add(bagGroup);
+    if (bag.design === 'round') {
+      const disc = new THREE.CylinderGeometry(0.42, 0.42, 0.3, 12);
+      disc.rotateX(Math.PI / 2);
+      disc.translate(0, 0, 0.43);
+      bagGroup.add(mesh(disc, new THREE.MeshLambertMaterial({ color: bag.colour })));
+      bagGroup.add(mesh(voxels([
+        [0.16, 0.15, 0.04, 0, 0, 0.6, 0xfef3c7],
+        [0.12, 0.38, 0.12, -0.22, 0.32, 0.25, bag.colour],
+        [0.12, 0.38, 0.12, 0.22, 0.32, 0.25, bag.colour],
+        [0.25, 0.08, 0.12, 0, 0.48, 0.4, 0xdb2777],
+      ])));
+    } else if (bag.design === 'cat') {
+      bagGroup.add(mesh(voxels([
+        [0.76, 0.65, 0.32, 0, 0, 0.43, bag.colour],
+        [0.16, 0.24, 0.3, -0.27, 0.4, 0.43, bag.colour],
+        [0.16, 0.24, 0.3, 0.27, 0.4, 0.43, bag.colour],
+        [0.08, 0.12, 0.02, -0.27, 0.4, 0.59, 0xfda4af],
+        [0.08, 0.12, 0.02, 0.27, 0.4, 0.59, 0xfda4af],
+        [0.08, 0.1, 0.03, -0.17, 0.06, 0.61, 0x18181b],
+        [0.08, 0.1, 0.03, 0.17, 0.06, 0.61, 0x18181b],
+        [0.1, 0.07, 0.04, 0, -0.06, 0.62, 0xfb7185],
+        [0.17, 0.025, 0.03, -0.25, -0.08, 0.61, 0x78350f],
+        [0.17, 0.025, 0.03, 0.25, -0.08, 0.61, 0x78350f],
+        [0.17, 0.025, 0.03, -0.25, -0.16, 0.61, 0x78350f],
+        [0.17, 0.025, 0.03, 0.25, -0.16, 0.61, 0x78350f],
+      ])));
+
+    }
+  }
+  if (cosmetics.back?.id === 'jetpack') {
+    const jetpack = new THREE.Group();
+    jetpack.name = 'cosmetic-jetpack';
+    jetpack.add(mesh(voxels([
+      [0.56, 0.7, 0.3, 0, 0, 0.38, 0x475569],
+      [0.18, 0.3, 0.06, 0, 0.08, 0.56, 0x38bdf8],
+      [0.12, 0.6, 0.5, -0.25, 0.24, 0, 0x334155],
+      [0.12, 0.6, 0.5, 0.25, 0.24, 0, 0x334155],
+      ...[-1, 1].flatMap((side) => [
+        [0.28, 0.82, 0.4, side * 0.37, 0, 0.45, 0xcbd5e1],
+        [0.3, 0.13, 0.42, side * 0.37, 0.3, 0.45, 0xf97316],
+        [0.24, 0.16, 0.32, side * 0.37, -0.48, 0.45, 0x334155],
+        [0.14, 0.07, 0.2, side * 0.37, -0.58, 0.45, 0x38bdf8],
+      ]),
+    ])));
+    torso.add(jetpack);
+  }
+  if (cosmetics.back?.id === 'katanas') {
+    // Crossed sheathed blades occupy the back slot, above both shoulders.
+    const swords = new THREE.Group();
+    swords.name = 'cosmetic-katanas';
+    // The harness touches the torso's back face (z = 0.22); sheaths sit on the mount.
+    const mount = mesh(voxels([
+      [0.46, 0.55, 0.12, 0, 0, 0.28, 0x1e293b],
+      [0.1, 0.62, 0.5, -0.26, 0.2, 0, 0x334155],
+      [0.1, 0.62, 0.5, 0.26, 0.2, 0, 0x334155],
+      [0.18, 0.12, 0.14, 0, 0.12, 0.33, 0xfacc15],
+    ]));
+    mount.name = 'katana-harness';
+    swords.add(mount);
+    for (const side of [-1, 1]) {
+      const sword = mesh(voxels([
+        [0.12, 1.3, 0.12, 0, -0.1, 0, 0x334155],
+        [0.04, 1.25, 0.13, 0.05, -0.1, 0, 0xcbd5e1],
+        [0.33, 0.08, 0.22, 0, 0.6, 0, 0xfacc15],
+        [0.13, 0.46, 0.13, 0, 0.86, 0, 0x7e22ce],
+        ...[0.7, 0.82, 0.94, 1.06].map((y) => [0.15, 0.04, 0.15, 0, y, 0, 0xf1f5f9]),
+      ]));
+      sword.rotation.z = side * 0.65;
+      sword.position.set(0, 0.02, 0.35);
+      swords.add(sword);
+    }
+    torso.add(swords);
+  }
+
 
   const headBoxes = [
     [0.58, 0.58, 0.58, 0, 0, 0, SKIN],
@@ -251,32 +382,114 @@ export function buildPlayer(role) {
     [0.08, 0.08, 0.04, -0.12, 0.02, -0.3, 0x0f172a], // eyes
     [0.08, 0.08, 0.04, 0.12, 0.02, -0.3, 0x0f172a],
   ];
-  if (role === 'alumni') {
+  if (role === 'alumni' && !['cap', 'hat'].includes(cosmetics.head?.id)) {
     headBoxes.push(
       [0.9, 0.06, 0.9, 0, 0.4, 0, 0x111827], // mortarboard
       [0.42, 0.16, 0.42, 0, 0.32, 0, 0x111827],
       [0.06, 0.34, 0.06, 0.4, 0.24, -0.1, 0xfacc15], // tassel
     );
-  } else if (role === 'awam') {
+  } else if (role === 'awam' && !['cap', 'hat'].includes(cosmetics.head?.id)) {
     headBoxes.push(
       [0.66, 0.16, 0.66, 0, 0.34, 0, 0xdc2626], // cap
       [0.5, 0.06, 0.3, 0, 0.27, -0.44, 0xdc2626],
+    );
+  }
+  if (cosmetics.face?.id === 'glasses') {
+    headBoxes.push(
+      [0.25, 0.16, 0.06, -0.16, 0.02, -0.34, 0x0f172a],
+      [0.25, 0.16, 0.06, 0.16, 0.02, -0.34, 0x0f172a],
+      [0.14, 0.04, 0.06, 0, 0.04, -0.34, 0xfacc15],
+      [0.04, 0.08, 0.5, -0.3, 0.04, -0.1, 0x0f172a],
+      [0.04, 0.08, 0.5, 0.3, 0.04, -0.1, 0x0f172a],
+    );
+  }
+  if (cosmetics.face?.id === 'mask') {
+    headBoxes.push(
+      [0.64, 0.64, 0.1, 0, 0, -0.35, 0xf1f5f9],
+      [0.12, 0.5, 0.22, -0.29, 0, -0.27, 0xe2e8f0],
+      [0.12, 0.5, 0.22, 0.29, 0, -0.27, 0xe2e8f0],
+      [0.18, 0.1, 0.025, -0.15, 0.07, -0.415, 0x0f172a],
+      [0.18, 0.1, 0.025, 0.15, 0.07, -0.415, 0x0f172a],
+      [0.07, 0.22, 0.03, -0.2, -0.13, -0.415, 0xdc2626],
+      [0.07, 0.22, 0.03, 0.2, -0.13, -0.415, 0xdc2626],
+      [0.2, 0.04, 0.03, 0, -0.19, -0.415, 0x334155],
+    );
+  }
+  if (cosmetics.head?.id === 'cap') {
+    headBoxes.push(
+      [0.72, 0.24, 0.72, 0, 0.38, 0, 0xfacc15],
+      [0.56, 0.1, 0.56, 0, 0.55, 0, 0xfde047],
+      [0.82, 0.08, 0.84, 0, 0.24, -0.03, 0xeab308],
+      [0.1, 0.34, 0.5, -0.32, 0.12, 0.05, 0xfacc15],
+      [0.1, 0.34, 0.5, 0.32, 0.12, 0.05, 0xfacc15],
+      [0.12, 0.06, 0.62, 0, 0.62, 0, 0xfef08a],
+      [0.04, 0.3, 0.04, -0.32, -0.08, -0.14, 0x334155],
+      [0.04, 0.3, 0.04, 0.32, -0.08, -0.14, 0x334155],
+      [0.66, 0.04, 0.04, 0, -0.23, -0.14, 0x334155],
+    );
+  } else if (cosmetics.head?.id === 'hat') {
+    headBoxes.push(
+      [1.05, 0.08, 1.02, 0, 0.34, 0, 0xd6a65b],
+      [0.66, 0.35, 0.64, 0, 0.54, 0, 0xd6a65b],
+      [0.68, 0.1, 0.66, 0, 0.42, 0, 0x92400e],
     );
   }
   const head = new THREE.Group();
   head.position.y = 0.78;
   head.add(mesh(voxels(headBoxes)));
   torso.add(head);
+  if (cosmetics.head?.id === 'headband') {
+    const halo = new THREE.Mesh(
+      new THREE.TorusGeometry(0.43, 0.045, 8, 32),
+      new THREE.MeshBasicMaterial({ color: 0xfacc15 }),
+    );
+    halo.name = 'cosmetic-halo';
+    halo.rotation.x = Math.PI / 2;
+    // Above even the alumni mortarboard, with a visible air gap and no support stem.
+    halo.position.y = role === 'alumni' ? 0.7 : 0.62;
+    head.add(halo);
+  }
 
   const arm = (side) => {
     const pivot = new THREE.Group();
     pivot.position.set(side * 0.52, 0.38, 0);
     const boxes = [
-      [0.24, 0.72, 0.24, 0, -0.32, 0, o.sleeve],
+      ...(outfitSleeveBoxes(outfit) ?? [[0.24, 0.72, 0.24, 0, -0.32, 0, o.sleeve]]),
       [0.22, 0.2, 0.22, 0, -0.74, 0, SKIN],
     ];
-    if (role === 'staf' && side === 1) boxes.push([0.18, 0.38, 0.54, 0.06, -0.94, 0, 0x451a03]); // briefcase
-    if (role === 'alumni' && side === 1) boxes.push([0.14, 0.14, 0.56, 0.04, -0.8, -0.1, 0xfef3c7]); // scroll
+    if (role === 'staf' && side === 1 && !cosmetics.hand) boxes.push([0.18, 0.38, 0.54, 0.06, -0.94, 0, 0x451a03]); // briefcase
+    if (role === 'alumni' && side === 1 && !cosmetics.hand) boxes.push([0.14, 0.14, 0.56, 0.04, -0.8, -0.1, 0xfef3c7]); // scroll
+    if (cosmetics.hand?.id === 'briefcase' && side === 1) {
+      boxes.push(
+        [0.1, 0.15, 0.07, 0, -0.88, -0.14, 0x451a03],
+        [0.1, 0.15, 0.07, 0, -0.88, 0.14, 0x451a03],
+        [0.1, 0.06, 0.35, 0, -0.82, 0, 0x451a03],
+        [0.22, 0.44, 0.66, 0, -1.13, 0, 0x78350f],
+        [0.24, 0.07, 0.68, 0, -1.0, 0, 0x451a03],
+        [0.03, 0.09, 0.1, 0.13, -1.05, 0, 0xfacc15],
+      );
+    }
+    if (cosmetics.hand?.id === 'trident' && side === 1) {
+      boxes.push(
+        [0.08, 1.55, 0.08, 0, -0.5, -0.04, 0xb45309],
+        [0.56, 0.1, 0.13, 0, 0.28, -0.04, 0xfacc15],
+        [0.1, 0.68, 0.13, 0, 0.62, -0.04, 0xfacc15],
+        [0.1, 0.48, 0.13, -0.25, 0.51, -0.04, 0xfacc15],
+        [0.1, 0.48, 0.13, 0.25, 0.51, -0.04, 0xfacc15],
+        [0.06, 0.16, 0.09, 0, 1.01, -0.04, 0xfef08a],
+        [0.06, 0.16, 0.09, -0.25, 0.83, -0.04, 0xfef08a],
+        [0.06, 0.16, 0.09, 0.25, 0.83, -0.04, 0xfef08a],
+        [0.13, 0.07, 0.13, 0, -0.65, -0.04, 0x38bdf8],
+      );
+    }
+    if (cosmetics.hand?.id === 'handheld' && side === 1) {
+      boxes.push(
+        [0.08, 0.08, 0.8, 0, -0.75, -0.25, 0x7e22ce],
+        [0.32, 0.1, 0.12, 0, -0.75, -0.72, 0xfacc15],
+        [0.1, 0.32, 0.12, 0, -0.75, -0.72, 0xfacc15],
+        [0.22, 0.22, 0.14, 0, -0.75, -0.72, 0xfef08a],
+      );
+    }
     pivot.add(mesh(voxels(boxes)));
     torso.add(pivot);
     return pivot;
@@ -316,6 +529,63 @@ export function buildPlayer(role) {
   group.add(shield);
 
   return { group, body, torso, head, lArm, rArm, lLeg, rLeg, shield };
+}
+
+/** The actual cosmetic geometry, isolated from the avatar for selection cards. */
+export function buildCosmeticItem(role, item, slot = item?.slot) {
+  const result = new THREE.Group();
+  if (slot === 'outfit') {
+    const o = OUTFITS[role] ?? OUTFITS.pelajar;
+    const design = item?.design;
+    const torso = outfitTorsoBoxes(design);
+    if (torso) {
+      result.add(mesh(voxels(torso)));
+      for (const side of [-1, 1]) {
+        const sleeves = outfitSleeveBoxes(design).filter((box) => box[6] !== SKIN);
+        const sleeve = mesh(voxels(sleeves));
+        sleeve.position.set(side * 0.52, 0.38, 0);
+        result.add(sleeve);
+      }
+    } else result.add(mesh(voxels([
+      [0.76, 0.92, 0.44, 0, 0, 0, o.shirt],
+      [0.42, 0.14, 0.46, 0, 0.44, 0, 0xf1f5f9],
+      [0.24, 0.72, 0.24, -0.52, 0.06, 0, o.sleeve],
+      [0.24, 0.72, 0.24, 0.52, 0.06, 0, o.sleeve],
+    ])));
+    return result;
+  }
+  if (!item) {
+    // Empty equipment option, with no character or mannequin.
+    result.add(new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.045, 8, 32), new THREE.MeshLambertMaterial({ color: 0x94a3b8 })));
+    const slash = mesh(voxels([[0.08, 0.86, 0.06, 0, 0, 0, 0x94a3b8]]));
+    slash.rotation.z = -Math.PI / 4;
+    result.add(slash);
+    return result;
+  }
+  const player = buildPlayer(role, { [item.slot]: item });
+  if (item.slot === 'back' || item.design === 'halo') {
+    const object = player.group.getObjectByName(item.design === 'halo' ? 'cosmetic-halo' : item.design ? `cosmetic-bag-${item.design}` : `cosmetic-${item.id}`);
+    object.removeFromParent();
+    result.add(object);
+  } else {
+    // Accessories share merged geometry with the head or hand. Copy only their boxes.
+    const source = item.slot === 'hand' ? player.rArm.children[0].geometry : player.head.children[0].geometry;
+    const defaultHatBoxes = ['cap', 'hat'].includes(item.id) ? 0 : role === 'alumni' ? 3 : role === 'awam' ? 2 : 0;
+    const start = (item.slot === 'hand' ? 2 : 5 + defaultHatBoxes) * 36;
+    const geometry = new THREE.BufferGeometry();
+    for (const name of ['position', 'normal', 'color']) {
+      const attribute = source.attributes[name];
+      geometry.setAttribute(name, new THREE.Float32BufferAttribute(attribute.array.slice(start * attribute.itemSize), attribute.itemSize));
+    }
+    geometry.computeBoundingSphere();
+    result.add(mesh(geometry));
+  }
+  player.group.traverse((obj) => {
+    if (!obj.isMesh) return;
+    obj.geometry.dispose();
+    if (obj.material !== voxelMat) obj.material.dispose();
+  });
+  return result;
 }
 
 // ---------- obstacles ----------

@@ -6,8 +6,8 @@ import { formatDistance, formatTime, formatClock, formatPoints, formatDate } fro
 import { initInput } from './input.js';
 import { play, unlockAudio, setMuted } from './audio.js';
 import { randomSeed } from '../../shared/rng.js';
-import { initAppsWarga, appsWargaHaptic, appsWargaShare, closeMiniApp, notifyAppReady } from '../../shared/appswarga.js';
-import { initFromArked, backToArked, shareUrl } from '../../shared/arked-link.js';
+import { initAppsWarga, appsWargaHaptic, closeMiniApp, notifyAppReady } from '../../shared/appswarga.js';
+import { initFromArked, backToArked } from '../../shared/arked-link.js';
 import { initProfile, loadProfile, withProfile } from '../../shared/profile.js';
 import { gameKey, readShared, writeShared } from '../../shared/shared-store.js';
 import * as lb from '../../shared/leaderboard.js';
@@ -15,8 +15,12 @@ import { hardReload } from '../../shared/reload.js';
 import { runPlan, MODE_LABELS } from './modes.js';
 import { createRecording, recordTick, validReplay, createGhost, stepGhost, betterRun, MAX_REPLAY_TICKS } from './replay.js';
 
+import { SLOTS, COSMETICS, isUnlocked, equippedCosmetics, newlyUnlocked, milestoneValue, milestoneLabel, milestoneProgress, progressionAfterRun } from './cosmetics.js';
+
+import { createRotationCode } from './rotation-code.js';
+
 const GAME_ID = 'kejar-lapan';
-const K = { settings: 'kl.settings', stats: 'kl.stats', seenHelp: 'kl.seenHelp' };
+const K = { settings: 'kl.settings', stats: 'kl.stats', seenHelp: 'kl.seenHelp', cosmetics: 'kl.cosmetics' };
 const SCREENS = ['home', 'game', 'result', 'board'];
 const OBSTACLE_NAME = { cone: 'kon', pothole: 'lubang jalan', monkey: 'monyet', barrier: 'palang', car: 'kereta', bus: 'bas kampus' };
 const $ = (sel) => document.querySelector(sel);
@@ -42,6 +46,10 @@ const store = {
   },
 };
 
+// Cheat access lasts only until this page is reloaded or closed. Legacy saved flags are ignored.
+let cosmeticsCheat = false;
+const rotationCode = createRotationCode();
+
 const settings = () => ({ sound: true, pad: true, ghost: true, mode: 'destination', role: null, ...store.get(K.settings, {}) });
 const saveSettings = (patch) => store.set(K.settings, { ...settings(), ...patch });
 const stats = () => ({ played: 0, best: 0, bestDistance: 0, ...store.get(K.stats, {}) });
@@ -66,6 +74,15 @@ function currentRole() {
 let game = null;
 let view = null;
 let viewFailed = false;
+let preview = null;
+let previewLoading = null;
+let previewFailed = false;
+let itemPreview = null;
+let avatarShare = null;
+let avatarShareKey = '';
+let avatarShareTimer = 0;
+let avatarShareSerial = 0;
+const thumbnailCache = new Map();
 let rafId = 0;
 let lastResult = null;
 let toastTimer = 0;
@@ -109,6 +126,8 @@ function todayKL(date = new Date()) {
 function show(name) {
   for (const s of SCREENS) $(`#screen-${s}`).hidden = s !== name;
   document.body.dataset.screen = name;
+  if (name !== 'home') rotationCode.reset();
+  preview?.setActive(name === 'home' && !document.hidden);
 }
 
 function go(path, replace = false) {
@@ -143,6 +162,7 @@ function renderRole() {
   $('#role-mission').textContent = r.mission;
   $('#role-items').textContent = `${r.items.points} +25 · ${r.items.boost} untuk pecut · ${r.items.shield} untuk kebal`;
   renderMode();
+  updatePreview();
 }
 
 function renderMode() {
@@ -187,10 +207,176 @@ function renderHome() {
   show('home');
   renderRole();
   renderSettings();
+  renderWardrobe();
   const st = stats();
   $('#st-distance').textContent = formatDistance(st.bestDistance);
   $('#st-best').textContent = formatPoints(st.best);
   $('#st-played').textContent = st.played;
+}
+
+// The wardrobe uses the same milestones for display and equipment validation.
+function renderWardrobe() {
+  const st = stats();
+  const selected = equippedCosmetics(st, store.get(K.cosmetics), cosmeticsCheat);
+  const totals = [
+    ['Permainan', st.played ?? 0], ['Jarak', formatDistance(st.totalDistance ?? 0)],
+    ['Minit bermain', Math.floor((st.totalSeconds ?? 0) / 60)], ['Mercu tanda', st.totalCheckpoints ?? 0],
+    ['Tepat masa', st.arrivals ?? 0], ['Item dikutip', st.totalItems ?? 0],
+  ];
+  $('#wardrobe-progress').replaceChildren(...totals.map(([label, value]) => {
+    const cell = h('div');
+    cell.append(h('dt', null, label), h('dd', null, value));
+    return cell;
+  }));
+  $('#wardrobe-count').textContent = `${COSMETICS.filter((item) => isUnlocked(st, item, cosmeticsCheat)).length}/${COSMETICS.length} dibuka`;
+  const groups = Object.entries(SLOTS).map(([slot, title]) => {
+    const group = h('fieldset', 'cosmetic-group');
+    group.append(h('legend', null, title));
+    const options = h('div', 'cosmetic-options');
+    const addOption = (item) => {
+      const unlocked = !item || isUnlocked(st, item, cosmeticsCheat);
+      const chosen = (selected[slot]?.id ?? null) === (item?.id ?? null);
+      const button = h('button', 'cosmetic-option');
+      button.type = 'button';
+      button.dataset.cosmeticSlot = slot;
+      button.dataset.cosmeticId = item?.id ?? 'original';
+      button.disabled = !unlocked;
+      button.classList.toggle('is-locked', !unlocked);
+      button.setAttribute('aria-pressed', String(chosen));
+      if (item && unlocked) button.style.setProperty('--cosmetic-colour', `#${item.colour.toString(16).padStart(6, '0')}`);
+      const thumbnail = h('img', 'cosmetic-thumbnail');
+      thumbnail.alt = '';
+      thumbnail.width = 192;
+      thumbnail.height = 160;
+      if (!item) thumbnail.src = 'original-cosmetic.svg';
+      if (!unlocked) {
+        thumbnail.src = 'locked-cosmetic.svg';
+        button.setAttribute('aria-label', `Kosmetik terkunci. ${milestoneLabel(item)}`);
+      }
+      button.append(thumbnail);
+      if (unlocked) button.append(h('strong', null, item?.name ?? 'Asal'));
+      if (chosen) {
+        const indicator = h('span', 'equipped-corner', '✓');
+        indicator.setAttribute('aria-hidden', 'true');
+        button.append(indicator);
+        button.setAttribute('aria-label', `${item?.name ?? 'Asal'} · Dipakai`);
+      }
+      if (!unlocked) button.append(h('small', 'cosmetic-goal', milestoneLabel(item)));
+      if (!unlocked) {
+        const value = Math.min(item.target, milestoneValue(st, item));
+        const progress = h('progress');
+        progress.max = item.target;
+        progress.value = value;
+        progress.setAttribute('aria-label', `Kemajuan: ${value} / ${item.target}`);
+        button.append(progress, h('small', null, milestoneProgress(st, item)));
+      }
+      button.addEventListener('click', () => {
+        const saved = store.set(K.cosmetics, { ...Object.fromEntries(Object.entries(selected).map(([key, value]) => [key, value?.id ?? null])), [slot]: item?.id ?? null });
+        renderWardrobe();
+        $(`[data-cosmetic-slot="${slot}"][data-cosmetic-id="${item?.id ?? 'original'}"]`).focus({ preventScroll: true });
+        toast(saved ? `${title}: ${item?.name ?? 'Asal'}` : 'Pilihan tidak dapat disimpan pada peranti ini.');
+      });
+      options.append(button);
+    };
+    addOption(null);
+    COSMETICS.filter((item) => item.slot === slot).forEach(addOption);
+    group.append(options);
+    return group;
+  });
+  $('#wardrobe-items').replaceChildren(...groups);
+  updatePreview();
+}
+
+async function updatePreview() {
+  const active = document.body.dataset.screen === 'home' && !document.hidden;
+  preview?.setActive(active);
+  if (!active || previewFailed) return;
+  if (!preview) {
+    $('#preview-status').textContent = 'Memuatkan pratonton…';
+    try {
+      previewLoading ??= import('./preview.js').then(({ createPreview }) => {
+        preview = createPreview($('#character-preview'));
+        itemPreview = createPreview(document.createElement('canvas'), { thumbnail: true });
+        new ResizeObserver(() => preview.resize()).observe($('#character-preview'));
+      });
+      await previewLoading;
+    } catch (err) {
+      console.error(err);
+      previewFailed = true;
+      $('#preview-status').textContent = 'Pratonton 3D tidak tersedia pada peranti ini.';
+      return;
+    }
+  }
+  const selected = equippedCosmetics(stats(), store.get(K.cosmetics), cosmeticsCheat);
+  const label = `${ROLES[currentRole()].label} · ${Object.entries(SLOTS).map(([slot, title]) => selected[slot]?.name ?? `${title} asal`).join(' · ')}`;
+  $('#preview-status').textContent = '';
+  $('#character-preview').setAttribute('aria-label', label);
+  const role = currentRole();
+  for (const button of document.querySelectorAll('.cosmetic-option')) {
+    if (button.disabled) continue;
+    const item = COSMETICS.find((candidate) => candidate.id === button.dataset.cosmeticId);
+    if (!item) continue; // Original equipment uses the shared pixel reset icon.
+    const slot = button.dataset.cosmeticSlot;
+    const key = `${role}:${slot}:${item?.id ?? 'original'}`;
+    if (!thumbnailCache.has(key)) {
+      // Only unlocked cards reveal isolated item geometry.
+      thumbnailCache.set(key, itemPreview.snapshot(role, item ? { [slot]: item } : {}, slot));
+    }
+    button.querySelector('img').src = thumbnailCache.get(key);
+  }
+  preview.update(role, selected);
+  preview.setActive(document.body.dataset.screen === 'home' && !document.hidden);
+  prepareAvatarImage(role, selected);
+}
+
+function prepareAvatarImage(role, cosmetics) {
+  const snapshot = { role, cosmetics, profile: { ...loadProfile() }, stats: stats() };
+  const key = JSON.stringify(snapshot);
+  if (key === avatarShareKey) return;
+  avatarShareKey = key;
+  const serial = ++avatarShareSerial;
+  clearTimeout(avatarShareTimer);
+  avatarShare = null;
+  const button = $('#preview-share');
+  button.disabled = true;
+  button.setAttribute('aria-busy', 'true');
+  button.title = 'Menyediakan imej watak…';
+  // Coalesce quick equipment changes and prepare the final image before the share gesture.
+  avatarShareTimer = setTimeout(async () => {
+    try {
+      const { createAvatarImage, shareResultImage } = await import('./share-card.js');
+      if (serial !== avatarShareSerial) return;
+      const file = await createAvatarImage(snapshot);
+      if (serial !== avatarShareSerial) return;
+      avatarShare = { file, share: shareResultImage };
+    } catch (err) {
+      if (serial !== avatarShareSerial) return;
+      console.error('Avatar image:', err);
+      avatarShareKey = ''; // The button can retry without changing equipment.
+    } finally {
+      if (serial === avatarShareSerial) {
+        button.disabled = false;
+        button.setAttribute('aria-busy', 'false');
+        button.title = avatarShare ? 'Kongsi imej watak' : 'Cuba imej watak semula';
+      }
+    }
+  }, 200);
+}
+
+async function shareAvatar() {
+  const asset = avatarShare;
+  if (!asset) {
+    prepareAvatarImage(currentRole(), equippedCosmetics(stats(), store.get(K.cosmetics), cosmeticsCheat));
+    toast('Menyediakan imej watak. Ketik Kongsi semula selepas siap.');
+    return;
+  }
+  const button = $('#preview-share');
+  button.disabled = true;
+  try {
+    const outcome = await asset.share(asset.file);
+    if (outcome === 'downloaded') toast('Imej watak dimuat turun.');
+  } catch { toast('Imej watak tidak dapat dikongsi. Cuba semula.'); }
+  finally { if (asset === avatarShare) button.disabled = false; }
 }
 
 // ---------- the run ----------
@@ -227,10 +413,10 @@ async function startGame() {
   const plan = runPlan(s.mode, role);
   const run = createRun({ seed: plan.seed ?? randomSeed(), role, finishAt: plan.finishAt });
   const previous = loadReplay(plan, role);
-  game = { run, plan, previous, recording: plan.key ? createRecording(run, plan) : null,
+  game = { run, plan, previous, cosmetics: equippedCosmetics(stats(), store.get(K.cosmetics), cosmeticsCheat), profile: { ...loadProfile() }, recording: plan.key ? createRecording(run, plan) : null,
     ghost: s.ghost && previous ? createGhost(previous, plan) : null,
     phase: 'ready', acc: 0, last: 0, queue: [], stepT: 0 };
-  view.reset();
+  view.reset(game.cosmetics);
   for (const k of Object.keys(hudCache)) delete hudCache[k];
   $('#hud-mission').textContent = `${MODE_LABELS[plan.mode]} · Kejar 8:00`;
   $('#hud-goal').hidden = !plan.key;
@@ -414,12 +600,11 @@ function finish() {
   const run = g.run;
   $('#screen-game').classList.add('over');
   const crash = run.status === 'crashed';
-  const st = stats();
-  const newBestDistance = run.distance > st.bestDistance && run.distance >= 50;
-  st.played += 1;
-  st.best = Math.max(st.best, run.score);
-  st.bestDistance = Math.max(st.bestDistance, Math.floor(run.distance));
-  store.set(K.stats, st);
+  const before = stats();
+  const newBestDistance = run.distance > before.bestDistance && run.distance >= 50;
+  const st = progressionAfterRun(before, run);
+  const progressSaved = store.set(K.stats, st);
+  const rewards = newlyUnlocked(before, st, cosmeticsCheat);
   let replayMessage = '';
   if (g.recording && run.t <= MAX_REPLAY_TICKS / 60 && !debugBot) {
     if (betterRun(run, g.previous?.result)) {
@@ -433,8 +618,11 @@ function finish() {
     plan: g.plan,
     timeLeft: run.timeLeft,
     replayMessage,
+    cosmeticMessage: rewards.length ? `Kosmetik dibuka: ${rewards.map((item) => item.name).join(', ')}. Pakai di Almari Gaya.` + (progressSaved ? '' : ' Kemajuan tidak dapat disimpan.') : '',
     obstacle: crash ? g.crashType : null,
     role: run.role,
+    cosmetics: g.cosmetics,
+    profile: g.profile,
     distance: Math.floor(run.distance),
     score: run.score,
     seconds: runSeconds(run),
@@ -467,6 +655,7 @@ function renderResult() {
   const role = ROLES[r.role];
   $('#res-mode').textContent = `${MODE_LABELS[r.plan.mode]}${r.plan.day ? ` · ${formatDate(r.plan.day)}` : ''}`;
   $('#res-replay').textContent = r.replayMessage;
+  $('#res-cosmetics').textContent = r.cosmeticMessage;
   if (r.reason === 'arrived') {
     $('#res-badge').textContent = '🏁';
     $('#res-title').textContent = 'Sampai Tepat Masa!';
@@ -487,6 +676,7 @@ function renderResult() {
   $('#res-score').textContent = formatPoints(r.score);
   const names = [LANDMARKS[0].short, ...r.landmarks];
   $('#res-landmarks').replaceChildren(...[...new Set(names)].map((n) => h('span', null, n)));
+  prepareResultImage(r);
   renderSubmit();
 }
 
@@ -537,23 +727,53 @@ async function submitResult(r) {
   renderSubmit();
 }
 
+async function prepareResultImage(r) {
+  const button = $('#res-share');
+  if (r.shareFile) {
+    button.disabled = false;
+    button.textContent = 'Kongsi';
+    return true;
+  }
+  if (r.sharePreparing) return r.sharePreparing;
+  button.disabled = true;
+  button.textContent = 'Menyediakan imej…';
+  r.sharePreparing = (async () => {
+    try {
+      const { createResultImage, shareResultImage } = await import('./share-card.js');
+      r.shareFile = await createResultImage(r);
+      r.shareImage = shareResultImage;
+      return true;
+    } catch (err) {
+      console.error('Result image:', err);
+      return false;
+    } finally {
+      r.sharePreparing = null;
+      if (lastResult === r && document.body.dataset.screen === 'result') {
+        button.disabled = false;
+        button.textContent = r.shareFile ? 'Kongsi' : 'Cuba imej semula';
+      }
+    }
+  })();
+  return r.sharePreparing;
+}
+
 async function shareResult() {
   const r = lastResult;
-  const text = `Kejar Lapan · ${MODE_LABELS[r.plan.mode]}${r.plan.day ? ` ${formatDate(r.plan.day)}` : ''} · ${r.reason === 'arrived' ? `Sampai ${r.plan.destination.short} dalam ${formatTime(r.seconds)} · ` : ''}${formatDistance(r.distance)} · ${r.checkpoints} mercu tanda · ${formatPoints(r.score)} mata`;
-  const url = shareUrl();
-  const viaApp = await appsWargaShare({ text, url, title: 'Kejar Lapan' });
-  if (viaApp) return;
-  try {
-    if (navigator.share) return await navigator.share({ text, url, title: 'Kejar Lapan' });
-  } catch (e) {
-    if (e?.name === 'AbortError') return;
+  if (!r) return;
+  if (!r.shareFile) {
+    const ready = await prepareResultImage(r);
+    toast(ready ? 'Imej sedia. Ketik Kongsi untuk berkongsi.' : 'Imej tidak dapat disediakan. Cuba semula.');
+    return;
   }
+  const button = $('#res-share');
+  button.disabled = true;
   try {
-    await navigator.clipboard.writeText(`${text}\n${url}`);
-    toast('Disalin ke papan klip');
+    // File is already prepared: call the native share API within this button gesture.
+    const outcome = await r.shareImage(r.shareFile);
+    if (outcome === 'downloaded') toast('Imej keputusan dimuat turun.');
   } catch {
-    toast('Tidak dapat berkongsi');
-  }
+    toast('Imej tidak dapat dikongsi. Cuba semula.');
+  } finally { if (lastResult === r) button.disabled = false; }
 }
 
 // ---------- leaderboard ----------
@@ -612,6 +832,42 @@ function init() {
   initFromArked();
   initAppsWarga();
   initProfile({ changed: () => document.body.dataset.screen === 'home' && renderRole() });
+
+  const homeTabs = [...document.querySelectorAll('[data-home-tab]')];
+  function selectHomeTab(tab, focus = false) {
+    for (const button of homeTabs) {
+      const selected = button.dataset.homeTab === tab;
+      button.setAttribute('aria-selected', String(selected));
+      button.tabIndex = selected ? 0 : -1;
+      document.getElementById(button.getAttribute('aria-controls')).hidden = !selected;
+      if (selected && focus) button.focus();
+    }
+    if (tab === 'wardrobe') renderWardrobe();
+  }
+  homeTabs.forEach((button, index) => {
+    button.addEventListener('click', () => selectHomeTab(button.dataset.homeTab));
+    button.addEventListener('keydown', (event) => {
+      const next = event.key === 'ArrowRight' ? (index + 1) % homeTabs.length
+        : event.key === 'ArrowLeft' ? (index + homeTabs.length - 1) % homeTabs.length
+        : event.key === 'Home' ? 0 : event.key === 'End' ? homeTabs.length - 1 : null;
+      if (next === null) return;
+      event.preventDefault();
+      selectHomeTab(homeTabs[next].dataset.homeTab, true);
+    });
+  });
+  $('#preview-share').addEventListener('click', shareAvatar);
+  const rotateAvatar = (direction) => {
+    if (!preview || document.body.dataset.screen !== 'home') return;
+    preview.rotate(direction);
+    if (!cosmeticsCheat && rotationCode.press(direction, performance.now())) {
+      cosmeticsCheat = true;
+      renderWardrobe();
+      toast('Kod rahsia! Semua kosmetik dibuka untuk sesi ini sahaja.');
+      appsWargaHaptic('notification', 'success');
+    }
+  };
+  $('#preview-left').addEventListener('click', () => rotateAvatar(-1));
+  $('#preview-right').addEventListener('click', () => rotateAvatar(1));
 
   $('#btn-help').addEventListener('click', () => $('#dlg-help').showModal());
   $('#help-close').addEventListener('click', () => $('#dlg-help').close());
@@ -685,7 +941,10 @@ function init() {
   for (const b of document.querySelectorAll('.tabs [data-tab]')) b.addEventListener('click', () => setTab(b.dataset.tab));
 
   // Pause when the player looks away: the page is hidden, or AppsWarga goes to the background.
-  document.addEventListener('visibilitychange', () => document.hidden && pause());
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { pause(); rotationCode.reset(); }
+    updatePreview();
+  });
   window.addEventListener('appswargaDeactivated', pause);
   window.addEventListener('blur', pause);
 
