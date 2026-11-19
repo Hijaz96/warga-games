@@ -130,6 +130,41 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
   // The player, rebuilt when the role changes.
   let player = null;
   let playerRole = null;
+  let ghostPlayer = null;
+  let ghostRole = null;
+  function syncGhost(run, ghost, now) {
+    if (ghost && ghostRole !== ghost.role) {
+      if (ghostPlayer) {
+        scene.remove(ghostPlayer.group);
+        ghostPlayer.group.traverse((obj) => {
+          if (obj.isMesh) {
+            obj.material.dispose();
+            obj.geometry.dispose();
+          }
+        });
+      }
+      ghostPlayer = buildPlayer(ghost.role);
+      ghostRole = ghost.role;
+      ghostPlayer.group.traverse((obj) => {
+        if (!obj.isMesh) return;
+        obj.material = obj.material.clone();
+        obj.material.transparent = true;
+        obj.material.opacity = 0.35;
+        obj.material.vertexColors = false;
+        obj.material.depthWrite = false;
+        obj.material.color.set(0x67e8f9);
+        obj.castShadow = false;
+      });
+      scene.add(ghostPlayer.group);
+    }
+    if (!ghostPlayer) return;
+    const offset = ghost ? z(run, ghost.distance) : Infinity;
+    ghostPlayer.group.visible = !!ghost && offset >= -VIEW_AHEAD && offset <= VIEW_BEHIND;
+    if (ghostPlayer.group.visible) {
+      animatePlayer(ghost, now, ghostPlayer, offset);
+      ghostPlayer.shield.visible = false;
+    }
+  }
   const blob = new THREE.Mesh(
     new THREE.PlaneGeometry(1.1, 1.1),
     new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false }),
@@ -244,7 +279,7 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
       } else if (e.type === 'crash') {
         burst(run.x, 1.2, 0, 0xef4444, 26);
         if (!reducedMotion()) shake = 0.7;
-      } else if (e.type === 'checkpoint') {
+      } else if (e.type === 'checkpoint' || e.type === 'arrived') {
         burst(run.x, 3, -4, 0xfacc15, 24);
       }
     }
@@ -255,6 +290,7 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
   function syncObstacles(run, now) {
     const seen = new Set();
     for (const o of run.course.obstacles) {
+      if (run.finishAt != null && o.at > run.finishAt) continue;
       const wz = z(run, o.at);
       if (o.hit || wz < -VIEW_AHEAD || wz > VIEW_BEHIND) continue;
       seen.add(o.id);
@@ -282,6 +318,7 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
   function syncItems(run, now) {
     const seen = new Set();
     for (const it of run.course.items) {
+      if (run.finishAt != null && it.at > run.finishAt) continue;
       const wz = z(run, it.at);
       if (it.taken || wz < -VIEW_AHEAD || wz > VIEW_BEHIND) continue;
       seen.add(it.id);
@@ -325,6 +362,7 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
     let a = 0;
     for (const k of [run.checkpoints - 1, run.checkpoints]) {
       if (k < 0) continue;
+      if (run.finishAt != null && checkpointAt(k) > run.finishAt) continue;
       const wz = z(run, checkpointAt(k));
       if (wz < -VIEW_AHEAD - 20 || wz > VIEW_BEHIND + 25) continue;
       const lm = landmarkFor(k);
@@ -332,18 +370,18 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
       obj.visible = true;
       obj.position.z = wz;
       const arch = arches[a++];
-      if (arch.userData.label !== lm.short) {
-        setArchLabel(arch, lm.short.toUpperCase());
-        arch.userData.label = lm.short;
+      const label = checkpointAt(k) === run.finishAt ? `TAMAT · ${lm.short}` : lm.short;
+      if (arch.userData.label !== label) {
+        setArchLabel(arch, label.toUpperCase());
+        arch.userData.label = label;
       }
       arch.visible = true;
       arch.position.z = wz;
     }
   }
 
-  function animatePlayer(run, now) {
-    const p = player;
-    p.group.position.set(run.x, run.y, 0);
+  function animatePlayer(run, now, p = player, offset = 0) {
+    p.group.position.set(run.x, run.y, offset);
     p.group.rotation.y = 0;
     const lean = Math.max(-0.12, Math.min(0.12, (laneX(run.lane) - run.x) * -0.04));
     p.body.rotation.z = lean;
@@ -380,8 +418,10 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
       p.shield.rotation.y = now * 0.002;
       p.shield.scale.setScalar(1 + Math.sin(now * 0.008) * 0.025);
     }
-    blob.position.x = run.x;
-    blob.scale.setScalar(Math.max(0.4, 1 - run.y * 0.2));
+    if (p === player) {
+      blob.position.x = run.x;
+      blob.scale.setScalar(Math.max(0.4, 1 - run.y * 0.2));
+    }
   }
 
   function animateParticles(dt) {
@@ -402,7 +442,7 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
   }
 
   /** Draws `run` (any phase). `dt`: real seconds since the last frame; `moving`: the run is playing. */
-  function draw(run, now, dt, moving) {
+  function draw(run, now, dt, moving, ghost = null) {
     setRole(run.role);
     // Road segments wrap: each is placed by the distance run, so they keep pace with the sim.
     const off = run.distance % SEG_LEN;
@@ -413,6 +453,7 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
     syncItems(run, now);
     syncLandmarks(run);
     animatePlayer(run, moving ? now : now * 0.25);
+    syncGhost(run, ghost, ghost ? ghost.t * 1000 : now);
     animateParticles(dt);
     dust.rotation.y += dt * 0.04;
 

@@ -3,6 +3,9 @@
 // max_points / max_points_per_sec); keep config.js SERVER in step with that row.
 import { CLOCK } from './config.js';
 
+/** Display a course's YYYY-MM-DD key as DD-MM-YYYY, without timezone conversion. */
+export const formatDate = (day) => day.split('-').reverse().join('-');
+
 /** "850 m" below a kilometre, then "1.25 km". */
 export function formatDistance(metres) {
   const m = Math.max(0, Math.floor(metres));

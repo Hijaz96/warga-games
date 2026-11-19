@@ -32,12 +32,13 @@ import {
 /** How far ahead the course is laid (the view reaches about 170 m). */
 export const LOOKAHEAD = 220;
 
-export function createRun({ seed = 1, role = 'pelajar' } = {}) {
+export function createRun({ seed = 1, role = 'pelajar', finishAt = null } = {}) {
   const course = createCourse(seed);
   extendCourse(course, LOOKAHEAD);
   return {
     seed,
     role,
+    finishAt,
     course,
     t: 0, // seconds run
     distance: 0,
@@ -56,7 +57,7 @@ export function createRun({ seed = 1, role = 'pelajar' } = {}) {
     score: 0,
     checkpoints: 0,
     picked: { points: 0, boost: 0, shield: 0, time: 0 },
-    status: 'running', // 'running' | 'crashed' | 'late'
+    status: 'running', // 'running' | 'crashed' | 'late' | 'arrived'
   };
 }
 
@@ -130,8 +131,11 @@ export function step(s, actions = [], dt = STEP) {
   // Forward.
   const base = baseSpeed(s.distance);
   s.speed = s.boostT > 0 ? base * BOOST.factor : base;
+  // Stop exactly at the finish or deadline, even when crossing during this tick.
+  const remaining = s.finishAt == null ? Infinity : Math.max(0, s.finishAt - s.distance) / s.speed;
+  dt = Math.min(dt, remaining, Math.max(0, s.timeLeft));
   const d0 = s.distance;
-  const d1 = d0 + s.speed * dt;
+  const d1 = s.finishAt == null ? d0 + s.speed * dt : Math.min(s.finishAt, d0 + s.speed * dt);
   s.distance = d1;
   s.t += dt;
   s.boostT = Math.max(0, s.boostT - dt);
@@ -141,6 +145,7 @@ export function step(s, actions = [], dt = STEP) {
   // Obstacles: anything whose length overlaps the stretch covered this step (swept, so nothing is
   // skipped however fast the run is).
   for (const o of s.course.obstacles) {
+    if (s.finishAt != null && o.at > s.finishAt) continue;
     if (o.hit) continue;
     const half = OBSTACLES[o.type].len / 2;
     if (o.at - half > d1 + PLAYER_HALF_D || o.at + half < d0 - PLAYER_HALF_D) continue;
@@ -160,6 +165,7 @@ export function step(s, actions = [], dt = STEP) {
 
   // Items.
   for (const it of s.course.items) {
+    if (s.finishAt != null && it.at > s.finishAt) continue;
     if (it.taken) continue;
     if (it.at < d0 - PICKUP.halfD || it.at > d1 + PICKUP.halfD) continue;
     if (Math.abs(s.x - LANES[it.lane]) >= PICKUP.halfW || s.y >= PICKUP.maxY) continue;
@@ -172,10 +178,12 @@ export function step(s, actions = [], dt = STEP) {
     events.push({ type: 'pickup', item: it });
   }
 
+  // Reaching the destination must happen before 8:00; the finish gives no extra time.
+  const arrived = s.finishAt != null && d1 >= s.finishAt && s.timeLeft > dt;
   // Checkpoints.
   while (d1 >= checkpointAt(s.checkpoints)) {
     const k = s.checkpoints;
-    const add = checkpointTime(k);
+    const add = checkpointAt(k) === s.finishAt ? 0 : checkpointTime(k);
     s.timeLeft = Math.min(CLOCK.max, s.timeLeft + add);
     s.bonus += CHECKPOINT_POINTS;
     s.checkpoints += 1;
@@ -186,7 +194,10 @@ export function step(s, actions = [], dt = STEP) {
 
   // The clock.
   s.timeLeft -= dt;
-  if (s.timeLeft <= 0) {
+  if (arrived) {
+    s.status = 'arrived';
+    events.push({ type: 'arrived' });
+  } else if (s.timeLeft <= 0) {
     s.timeLeft = 0;
     s.status = 'late';
     events.push({ type: 'late' });

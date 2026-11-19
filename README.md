@@ -77,6 +77,18 @@ The hub keeps its own copies of `appswarga.js`, `select.js`, `profile-options.js
 - The campus clock runs from 07:55 to 8:00. Each landmark (Kolej Perindu, Menara SAAS, Masjid,
   PTAR, DATC, FSKM, Kejuruteraan, round and round) is a checkpoint that adds time: +16 s, one
   less each time, at least +8 s. Crash or reach 8:00 and the run ends.
+- **Tepat Masa** (default): a repeatable route to the role's destination: Pelajar → FSKM
+  (2.4 km), Staf → Menara SAAS (640 m), Alumni → DATC (1.9 km), Awam → PTAR (1.44 km).
+  Arrive before 8:00 to win. The finish awards checkpoint points but no extra clock time.
+- **Cabaran Harian**: everyone runs the same seeded 1.9 km route to DATC, regardless of role.
+  A new route starts at midnight Malaysia time. **Tanpa Henti** keeps the random endless run.
+- **Bayang rekod**: optional translucent replay of the best attempt on the same route, stored
+  locally on this device. Completed runs rank by fastest finish, then score; unfinished runs
+  rank by furthest distance, then score. Sparse inputs replay at fixed simulation ticks; pauses
+  do not advance the ghost, which cannot collide with the player or take their items. Only the
+  latest daily record and one record per destination role are retained. Course identities are
+  versioned in `js/modes.js`; bump `COURSE_VERSION` after physics, tuning or generation changes.
+  The existing leaderboards continue to aggregate scores from all modes.
 - Lompat (jump) kon, lubang, monyet; tunduk (slide) under palang; go round bas and kereta.
   Swipe, arrow keys / WASD / Space, or the on-screen buttons (a setting).
 - The character comes from the profile (Pelajar, Staf, Alumni, Awam) and can be switched; items

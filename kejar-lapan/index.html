@@ -57,7 +57,25 @@
         <small id="role-items">Buku +25 · Kopi untuk pecut · Kad Matrik untuk kebal</small>
       </div>
 
+      <section class="kl-modes" aria-labelledby="mode-title">
+        <div class="mode-heading">
+          <h2 id="mode-title">Mod permainan</h2>
+          <span class="mode-date" id="mode-date" hidden></span>
+        </div>
+        <div class="mode-options">
+          <button type="button" class="mode-chip" data-mode="destination" aria-pressed="true">Tepat Masa</button>
+          <button type="button" class="mode-chip" data-mode="daily" aria-pressed="false">Harian</button>
+          <button type="button" class="mode-chip" data-mode="endless" aria-pressed="false">Tanpa Henti</button>
+        </div>
+        <div id="mode-description" class="mode-description"></div>
+        <small id="mode-best"></small>
+      </section>
+
       <div class="kl-settings" role="group" aria-label="Tetapan">
+        <button type="button" class="switch-row" id="set-ghost" role="switch" aria-checked="true">
+          <span class="switch-text"><strong>Bayang rekod</strong><small id="set-ghost-hint">Lawan larian terbaik pada peranti ini</small></span>
+          <span class="switch" aria-hidden="true"></span>
+        </button>
         <button type="button" class="switch-row" id="set-sound" role="switch" aria-checked="true">
           <span class="switch-text"><strong>Bunyi</strong><small id="set-sound-hint">Kesan bunyi semasa berlari</small></span>
           <span class="switch" aria-hidden="true"></span>
@@ -80,7 +98,7 @@
         <div><dt>Dimainkan</dt><dd id="st-played">0</dd></div>
       </dl>
 
-      <button type="button" class="app-version" id="btn-version" aria-label="Versi 1.0. Ketik untuk muat semula permainan.">Versi 1.0</button>
+      <button type="button" class="app-version" id="btn-version" aria-label="Versi 1.1. Ketik untuk muat semula permainan.">Versi 1.1</button>
     </section>
 
     <!-- Permainan -->
@@ -106,6 +124,11 @@
           </button>
         </div>
         <div class="hud-next" id="hud-next"></div>
+        <div class="hud-goal" id="hud-goal" hidden>
+          <label id="hud-goal-label" for="goal-progress"></label>
+          <progress id="goal-progress" max="1" value="0"></progress>
+        </div>
+        <div class="hud-next hud-ghost" id="hud-ghost"></div>
         <div class="hud-badges">
           <span class="hud-shield" id="hud-shield" hidden>KEBAL</span>
           <div class="hud-boost" id="hud-boost" hidden><i id="hud-boost-fill"></i></div>
@@ -145,6 +168,8 @@
         <div class="kl-result-badge" id="res-badge" aria-hidden="true"></div>
         <h2 id="res-title"></h2>
         <p class="res-sub" id="res-sub"></p>
+        <p class="res-mode" id="res-mode"></p>
+        <p class="res-replay" id="res-replay"></p>
         <div class="res-distance">
           <small>Jarak</small>
           <strong id="res-distance"></strong>
@@ -222,6 +247,8 @@
       <li>Lompat kon, lubang dan monyet. Tunduk di bawah palang. Elak bas dan kereta.</li>
       <li>Setiap <b>mercu tanda</b> menambah masa. Jika jam sampai <b>8:00</b>, anda terlewat!</li>
       <li>Kutip barang: <b>mata</b>, <b>pecut</b> (rempuh semua halangan) dan <b>kebal</b> (selamat sekali langgar). <b>Jam</b> menambah 5 saat.</li>
+      <li><b>Tepat Masa</b>: sampai ke destinasi watak sebelum 8:00. <b>Harian</b>: semua pemain menuju DATC melalui laluan sama, bertukar pada tengah malam Malaysia. <b>Tanpa Henti</b>: lari sejauh mungkin.</li>
+      <li><b>Bayang rekod</b> mengulang larian terbaik pada peranti ini untuk laluan yang sama. Larian berjaya terpantas diutamakan; jika belum berjaya, jarak terjauh diutamakan. Bayang tidak menghalang atau mengambil barang anda.</li>
     </ol>
     <div class="dialog-actions">
       <button type="button" class="btn btn-primary" id="help-close">Faham!</button>

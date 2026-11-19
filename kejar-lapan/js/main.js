@@ -2,7 +2,7 @@
 import { STEP, ROLES, BOOST, LANDMARKS } from './config.js';
 import { createRun, step, nextCheckpoint, runSeconds } from './sim.js';
 import { landmarkFor } from './course.js';
-import { formatDistance, formatTime, formatClock, formatPoints } from './score.js';
+import { formatDistance, formatTime, formatClock, formatPoints, formatDate } from './score.js';
 import { initInput } from './input.js';
 import { play, unlockAudio, setMuted } from './audio.js';
 import { randomSeed } from '../../shared/rng.js';
@@ -12,6 +12,8 @@ import { initProfile, loadProfile, withProfile } from '../../shared/profile.js';
 import { gameKey, readShared, writeShared } from '../../shared/shared-store.js';
 import * as lb from '../../shared/leaderboard.js';
 import { hardReload } from '../../shared/reload.js';
+import { runPlan, MODE_LABELS } from './modes.js';
+import { createRecording, recordTick, validReplay, createGhost, stepGhost, betterRun, MAX_REPLAY_TICKS } from './replay.js';
 
 const GAME_ID = 'kejar-lapan';
 const K = { settings: 'kl.settings', stats: 'kl.stats', seenHelp: 'kl.seenHelp' };
@@ -32,15 +34,25 @@ const store = {
   set(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
+      return true;
     } catch {
       /* storage unavailable */
+      return false;
     }
   },
 };
 
-const settings = () => ({ sound: true, pad: true, role: null, ...store.get(K.settings, {}) });
+const settings = () => ({ sound: true, pad: true, ghost: true, mode: 'destination', role: null, ...store.get(K.settings, {}) });
 const saveSettings = (patch) => store.set(K.settings, { ...settings(), ...patch });
 const stats = () => ({ played: 0, best: 0, bestDistance: 0, ...store.get(K.stats, {}) });
+
+// Only one daily replay and one per destination role: storage stays bounded.
+const replaySlot = (plan, role) => plan.mode === 'daily' ? 'kl.replay.daily' : `kl.replay.destination.${role}`;
+function loadReplay(plan, role) {
+  if (!plan.key) return null;
+  const replay = store.get(replaySlot(plan, role));
+  return validReplay(replay, plan) ? replay : null;
+}
 
 /** The character: the one picked on the home screen, else the profile's user type. */
 function currentRole() {
@@ -130,6 +142,36 @@ function renderRole() {
   const r = ROLES[role];
   $('#role-mission').textContent = r.mission;
   $('#role-items').textContent = `${r.items.points} +25 · ${r.items.boost} untuk pecut · ${r.items.shield} untuk kebal`;
+  renderMode();
+}
+
+function renderMode() {
+  const role = currentRole();
+  const plan = runPlan(settings().mode, role);
+  for (const b of document.querySelectorAll('.mode-chip')) b.setAttribute('aria-pressed', String(b.dataset.mode === plan.mode));
+  $('#mode-date').hidden = !plan.day;
+  $('#mode-date').textContent = plan.day ? formatDate(plan.day) : '';
+  const facts = h('div', 'mode-facts');
+  facts.append(
+    h('span', null, plan.key ? formatDistance(plan.finishAt) : 'Laluan rawak'),
+    h('span', null, 'Sebelum 8:00'),
+  );
+  $('#mode-description').replaceChildren(
+    h('small', 'mode-caption', plan.key ? 'Destinasi anda' : 'Cabaran anda'),
+    h('strong', 'mode-destination', plan.destination?.short ?? 'Lari sejauh mungkin'),
+    facts,
+    h('p', 'mode-note', plan.mode === 'daily'
+      ? 'Laluan sama untuk semua pemain.'
+      : plan.key ? 'Sampai tepat masa untuk menang.' : 'Elak halangan dan kumpul markah tertinggi.'),
+  );
+  const replay = loadReplay(plan, role);
+  $('#mode-best').textContent = replay
+    ? `Rekod laluan: ${replay.result.status === 'arrived' ? `Berjaya · ${formatTime(replay.result.t)}` : formatDistance(replay.result.distance)}`
+    : plan.key ? 'Belum ada rekod laluan pada peranti ini.' : '';
+  $('#set-ghost').disabled = !plan.key;
+  $('#set-ghost').setAttribute('aria-checked', String(settings().ghost && !!plan.key));
+  $('#set-ghost-hint').textContent = !plan.key ? 'Tersedia dalam Tepat Masa dan Harian'
+    : replay ? 'Ulang larian terbaik pada peranti ini' : 'Larian pertama akan disimpan sebagai bayang';
 }
 
 function renderSettings() {
@@ -182,14 +224,21 @@ async function startGame() {
   }
   if (document.body.dataset.screen !== 'game') return; // left while loading
   const role = currentRole();
-  game = { run: createRun({ seed: randomSeed(), role }), phase: 'ready', acc: 0, last: 0, queue: [], stepT: 0 };
+  const plan = runPlan(s.mode, role);
+  const run = createRun({ seed: plan.seed ?? randomSeed(), role, finishAt: plan.finishAt });
+  const previous = loadReplay(plan, role);
+  game = { run, plan, previous, recording: plan.key ? createRecording(run, plan) : null,
+    ghost: s.ghost && previous ? createGhost(previous, plan) : null,
+    phase: 'ready', acc: 0, last: 0, queue: [], stepT: 0 };
   view.reset();
   for (const k of Object.keys(hudCache)) delete hudCache[k];
-  $('#hud-mission').textContent = `${ROLES[role].label} · Kejar 8:00`;
+  $('#hud-mission').textContent = `${MODE_LABELS[plan.mode]} · Kejar 8:00`;
+  $('#hud-goal').hidden = !plan.key;
   hideHudToast();
   renderHud();
-  overlay('Sedia?', ROLES[role].mission + '. Leret atau tekan butang untuk mula.', 'Mula', begin);
-  view.draw(game.run, performance.now(), 0, false);
+  overlay('Sedia?', (plan.key ? `Sampai ke ${plan.destination.short} sebelum 8:00.` : ROLES[role].mission + '.') +
+    (game.ghost ? ' Lawan bayang rekod anda!' : '') + ' Leret atau tekan butang untuk mula.', 'Mula', begin);
+  view.draw(game.run, performance.now(), 0, false, game.ghost?.run);
   // Tell Arked Warga this game was played (its continue card).
   writeShared(gameKey(GAME_ID), { ...readShared(gameKey(GAME_ID)), lastPlayedAt: Date.now(), daily: null });
 }
@@ -238,14 +287,17 @@ function frame(now) {
   g.acc += dt;
   const events = [];
   while (g.acc >= STEP && g.run.status === 'running') {
-    const actions = g.queue.splice(0);
+    let actions = g.queue.splice(0);
     if (debugBot) actions.push(...debugBot(g.run));
+    actions = actions.slice(0, 32);
+    if (g.recording) recordTick(g.recording, actions);
     events.push(...step(g.run, actions));
+    stepGhost(g.ghost);
     g.acc -= STEP;
   }
   handleEvents(events, dt);
   view.onEvents(g.run, events);
-  view.draw(g.run, now, dt, true);
+  view.draw(g.run, now, dt, true, g.ghost?.run);
   renderHud();
   if (g.run.status !== 'running') return finish();
   rafId = requestAnimationFrame(frame);
@@ -292,6 +344,11 @@ function handleEvents(events, dt) {
         play('late');
         appsWargaHaptic('notification', 'warning');
         break;
+      case 'arrived':
+        play('checkpoint');
+        appsWargaHaptic('notification', 'success');
+        hudToast('Sampai tepat masa!', game.plan.destination.short);
+        break;
     }
   }
   // Footsteps while running on the ground.
@@ -329,6 +386,16 @@ function renderHud() {
   setText('hud-status', level === '' ? 'Masih sempat!' : level === 'warn' ? 'Pecut!' : 'Saat akhir!');
   const next = nextCheckpoint(run);
   setText('hud-next', `${next.landmark.short} · ${formatDistance(next.metres)} lagi`);
+  if (game.plan.key) {
+    setText('hud-goal-label', `${game.plan.destination.short} · ${formatDistance(Math.max(0, run.finishAt - run.distance))} lagi`);
+    $('#goal-progress').value = Math.min(1, run.distance / run.finishAt);
+  }
+  const ghost = game.ghost?.run;
+  const gap = ghost ? Math.round(run.distance - ghost.distance) : 0;
+  setText('hud-ghost', ghost
+    ? ghost.status !== 'running' ? `Bayang ${ghost.status === 'arrived' ? 'sudah sampai' : 'tamat'} · ${formatDistance(ghost.distance)}`
+      : Math.abs(gap) < 1 ? 'Bayang rekod · Seiring' : `Bayang rekod · Anda ${gap > 0 ? 'di hadapan' : 'di belakang'} ${Math.abs(gap)} m`
+    : '');
   if (hudCache.shield !== run.shield) {
     hudCache.shield = run.shield;
     $('#hud-shield').hidden = !run.shield;
@@ -353,8 +420,19 @@ function finish() {
   st.best = Math.max(st.best, run.score);
   st.bestDistance = Math.max(st.bestDistance, Math.floor(run.distance));
   store.set(K.stats, st);
+  let replayMessage = '';
+  if (g.recording && run.t <= MAX_REPLAY_TICKS / 60 && !debugBot) {
+    if (betterRun(run, g.previous?.result)) {
+      g.recording.result = { status: run.status, distance: run.distance, score: run.score, t: run.t };
+      const saved = store.set(replaySlot(g.plan, run.role), g.recording);
+      replayMessage = saved ? 'Rekod laluan baharu! Bayang disimpan untuk cubaan seterusnya.' : 'Bayang tidak dapat disimpan pada peranti ini.';
+    } else replayMessage = 'Bayang rekod terbaik anda dikekalkan. Cuba lagi!';
+  }
   lastResult = {
-    reason: crash ? 'crash' : 'late',
+    reason: run.status === 'arrived' ? 'arrived' : crash ? 'crash' : 'late',
+    plan: g.plan,
+    timeLeft: run.timeLeft,
+    replayMessage,
     obstacle: crash ? g.crashType : null,
     role: run.role,
     distance: Math.floor(run.distance),
@@ -372,7 +450,7 @@ function finish() {
       if (game !== g) return;
       const dt = Math.min((now - (g.last || now)) / 1000, 0.05);
       g.last = now;
-      view.draw(run, now, dt, false);
+      view.draw(run, now, dt, false, g.ghost?.run);
       if (now - t0 < 1100) requestAnimationFrame(tick);
       else go('tamat', true);
     };
@@ -387,7 +465,13 @@ function renderResult() {
   const r = lastResult;
   show('result');
   const role = ROLES[r.role];
-  if (r.reason === 'crash') {
+  $('#res-mode').textContent = `${MODE_LABELS[r.plan.mode]}${r.plan.day ? ` · ${formatDate(r.plan.day)}` : ''}`;
+  $('#res-replay').textContent = r.replayMessage;
+  if (r.reason === 'arrived') {
+    $('#res-badge').textContent = '🏁';
+    $('#res-title').textContent = 'Sampai Tepat Masa!';
+    $('#res-sub').textContent = `Berjaya ke ${r.plan.destination.short} pada ${formatClock(r.timeLeft)}.`;
+  } else if (r.reason === 'crash') {
     $('#res-badge').textContent = '💥';
     $('#res-title').textContent = 'Terlanggar!';
     $('#res-sub').textContent = `Terlanggar ${OBSTACLE_NAME[r.obstacle] ?? 'halangan'}. ${role.late}`;
@@ -455,7 +539,7 @@ async function submitResult(r) {
 
 async function shareResult() {
   const r = lastResult;
-  const text = `Kejar Lapan · ${formatDistance(r.distance)} · ${r.checkpoints} mercu tanda · ${formatPoints(r.score)} mata`;
+  const text = `Kejar Lapan · ${MODE_LABELS[r.plan.mode]}${r.plan.day ? ` ${formatDate(r.plan.day)}` : ''} · ${r.reason === 'arrived' ? `Sampai ${r.plan.destination.short} dalam ${formatTime(r.seconds)} · ` : ''}${formatDistance(r.distance)} · ${r.checkpoints} mercu tanda · ${formatPoints(r.score)} mata`;
   const url = shareUrl();
   const viaApp = await appsWargaShare({ text, url, title: 'Kejar Lapan' });
   if (viaApp) return;
@@ -545,6 +629,20 @@ function init() {
       appsWargaHaptic('selection');
     });
   }
+  for (const b of document.querySelectorAll('.mode-chip')) {
+    b.addEventListener('click', () => {
+      saveSettings({ mode: b.dataset.mode });
+      renderMode();
+      appsWargaHaptic('selection');
+    });
+  }
+  $('#set-ghost').addEventListener('click', () => {
+    saveSettings({ ghost: !settings().ghost });
+    renderMode();
+    appsWargaHaptic('selection');
+  });
+  // Refresh the daily label/record after midnight or returning from the background.
+  setInterval(() => document.body.dataset.screen === 'home' && renderMode(), 30000);
   $('#set-sound').addEventListener('click', () => {
     saveSettings({ sound: !settings().sound });
     renderSettings();
