@@ -9,6 +9,7 @@ import {
   JUMPERS,
   BLOCKERS,
   ITEM_CHANCE,
+  TIME_SUPPORT,
   CLOCK,
   CHECKPOINTS,
   LANDMARKS,
@@ -82,13 +83,17 @@ export function pattern(rng, tier) {
 }
 
 export function createCourse(seed) {
-  return { rng: mulberry32(seed), nextRowAt: ROWS.first, nextId: 1, obstacles: [], items: [] };
+  return { rng: mulberry32(seed), nextRowAt: ROWS.first, nextId: 1, rowsPlaced: 0, obstacles: [], items: [] };
 }
 
 /** Items in the gap whose middle is `mid`: a line of three points items, or one power-up. */
-function placeItems(course, mid) {
+function placeItems(course, mid, supportRow = false) {
   const { rng } = course;
   const add = (at, lane, kind) => course.items.push({ id: course.nextId++, at, lane, kind, taken: false });
+  if (supportRow) {
+    course.items.push({ id: course.nextId++, at: mid, lane: Math.floor(rng() * 3), kind: 'time', taken: false, support: true });
+    return;
+  }
   if (rng() < ITEM_CHANCE.line) {
     const lane = Math.floor(rng() * 3);
     for (const off of [-4, 0, 4]) add(mid + off, lane, 'points');
@@ -108,8 +113,10 @@ export function extendCourse(course, until) {
     pattern(course.rng, tierAt(at)).forEach((type, lane) => {
       if (type) course.obstacles.push({ id: course.nextId++, at, lane, type, hit: false });
     });
-    const gap = rowGap(at);
-    placeItems(course, at + gap / 2);
+    course.rowsPlaced++;
+    const supportRow = course.rowsPlaced % TIME_SUPPORT.everyRows === 0;
+    const gap = supportRow ? Math.max(rowGap(at), TIME_SUPPORT.minGap) : rowGap(at);
+    placeItems(course, at + gap / 2, supportRow);
     course.nextRowAt = at + gap;
   }
 }

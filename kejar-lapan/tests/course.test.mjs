@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { baseSpeed, createCourse, extendCourse, pattern, passable, checkpointAt, checkpointTime, landmarkFor, rowGap, tierAt } from '../js/course.js';
-import { OBSTACLES, LANES, CHECKPOINTS, CLOCK, LANDMARKS, ROWS, LANE_SPEED } from '../js/config.js';
+import { OBSTACLES, LANES, CHECKPOINTS, CLOCK, LANDMARKS, ROWS, LANE_SPEED, TIME_SUPPORT } from '../js/config.js';
 import { mulberry32 } from '../../shared/rng.js';
 
 function rowsOf(course) {
@@ -81,4 +81,21 @@ test('checkpoints spread out and give less time each, never below the minimum', 
   assert.equal(checkpointTime(100), CLOCK.cpMin);
   assert.equal(landmarkFor(0), LANDMARKS[1]);
   assert.equal(landmarkFor(LANDMARKS.length - 1), LANDMARKS[1]); // the gate is only at the start
+});
+
+
+test('one support clock appears every twelfth row in a seeded random lane', () => {
+  for (let seed = 1; seed <= 50; seed++) {
+    const course = createCourse(seed);
+    extendCourse(course, 15000);
+    const clocks = course.items.filter((item) => item.support);
+    assert.equal(clocks.length, Math.floor(course.rowsPlaced / TIME_SUPPORT.everyRows));
+    assert.ok(clocks.every((item) => item.kind === 'time' && [0, 1, 2].includes(item.lane)));
+    assert.ok(new Set(clocks.map((item) => item.lane)).size > 1);
+    const positions = clocks.map((item) => item.at);
+    assert.equal(new Set(positions).size, positions.length, 'never duplicate a support clock across lanes');
+    assert.ok(positions.length > 20);
+    const expected = rowsOf(course).filter((_, i) => (i + 1) % TIME_SUPPORT.everyRows === 0).map(([at]) => at + Math.max(rowGap(at), TIME_SUPPORT.minGap) / 2);
+    assert.deepEqual(positions, expected);
+  }
 });

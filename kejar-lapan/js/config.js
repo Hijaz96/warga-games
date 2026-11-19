@@ -53,6 +53,8 @@ export const ITEMS = {
   time: { value: 25, seconds: 5 },
 };
 /** Per gap: a line of three points items, or else one power-up (these chances, in order). */
+/** One +5 s clock in a random lane each twelfth row, with room to approach and leave it. */
+export const TIME_SUPPORT = { everyRows: 12, minGap: 60 };
 export const ITEM_CHANCE = { line: 0.55, boost: 0.1, shield: 0.07, time: 0.04 };
 /** An item is collected within this distance along the road and across it. */
 export const PICKUP = { halfD: 0.9, halfW: 1.1, maxY: 2.3 };

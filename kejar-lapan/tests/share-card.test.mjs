@@ -64,3 +64,28 @@ test('share cards use the saved campus instead of a fixed Shah Alam footer', () 
     assert.equal(avatarCardContent({ role: 'awam', profile: missing }).campus, '');
   }
 });
+
+test('AppsWarga shares image bytes through the native bridge without browser file sharing', async () => {
+  const file = new File(['png'], 'result.png', { type: 'image/png' });
+  let request;
+  const bridge = { ready: true, callHandler: async (name, options) => { request = { name, options }; return { status: 'success' }; } };
+  assert.equal(await shareResultImage(file, {}, () => assert.fail('No download'), bridge), 'shared');
+  assert.deepEqual(request, { name: 'share', options: { title: 'Kejar Lapan', image: 'cG5n', imageType: 'image/png' } });
+});
+
+test('native cancellation and busy errors do not open a second sheet or download', async () => {
+  const file = new File(['png'], 'result.png', { type: 'image/png' });
+  const nav = { canShare: () => assert.fail('No browser fallback') };
+  const download = () => assert.fail('No download');
+  assert.equal(await shareResultImage(file, nav, download, { ready: true, callHandler: async () => ({ status: 'error', code: 'CANCELLED' }) }), 'cancelled');
+  await assert.rejects(shareResultImage(file, nav, download, { ready: true, callHandler: async () => ({ status: 'error', code: 'BUSY' }) }), /Native image sharing failed/);
+});
+
+test('an unsupported native bridge falls back to browser image sharing', async () => {
+  const file = new File(['png'], 'result.png', { type: 'image/png' });
+  let calls = 0;
+  const nav = { canShare: () => true, share: async () => { calls++; } };
+  const bridge = { ready: true, callHandler: async () => ({ status: 'error', code: 'UNKNOWN_HANDLER' }) };
+  assert.equal(await shareResultImage(file, nav, () => assert.fail(), bridge), 'shared');
+  assert.equal(calls, 1);
+});

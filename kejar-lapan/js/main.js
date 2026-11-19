@@ -3,6 +3,7 @@ import { STEP, ROLES, BOOST, LANDMARKS } from './config.js';
 import { createRun, step, nextCheckpoint, runSeconds } from './sim.js';
 import { landmarkFor } from './course.js';
 import { formatDistance, formatTime, formatClock, formatPoints, formatDate } from './score.js';
+import { initTouchButtons } from './touch-buttons.js';
 import { initInput } from './input.js';
 import { play, unlockAudio, setMuted } from './audio.js';
 import { randomSeed } from '../../shared/rng.js';
@@ -368,21 +369,27 @@ function prepareAvatarImage(role, cosmetics) {
 }
 
 async function shareAvatar() {
-  const asset = avatarShare;
-  if (!asset) {
-    prepareAvatarImage(currentRole(), equippedCosmetics(stats(), store.get(K.cosmetics), cosmeticsCheat));
-    toast('Menyediakan imej watak. Ketik Kongsi semula selepas siap.');
-    return;
-  }
+  let asset = avatarShare;
+  const serial = avatarShareSerial;
   const button = $('#preview-share');
   setShareBusy(button, true);
-  button.title = 'Membuka perkongsian…';
   try {
+    if (!asset) {
+      button.title = 'Menyediakan imej watak…';
+      const snapshot = { role: currentRole(), cosmetics: equippedCosmetics(stats(), store.get(K.cosmetics), cosmeticsCheat), profile: { ...loadProfile() }, stats: stats() };
+      const { createAvatarImage, shareResultImage } = await import('./share-card.js');
+      const file = await createAvatarImage(snapshot);
+      if (serial !== avatarShareSerial) return;
+      asset = { file, share: shareResultImage };
+      avatarShare = asset;
+      avatarShareKey = JSON.stringify(snapshot);
+    }
+    button.title = 'Membuka perkongsian…';
     const outcome = await asset.share(asset.file);
     if (outcome === 'downloaded') toast('Imej watak dimuat turun.');
   } catch { toast('Imej watak tidak dapat dikongsi. Cuba semula.'); }
   finally {
-    if (asset === avatarShare) {
+    if (serial === avatarShareSerial) {
       setShareBusy(button, false);
       button.title = 'Kongsi imej watak';
     }
@@ -398,8 +405,13 @@ async function ensureView() {
     await Promise.race([document.fonts?.load("800 40px 'Lexend'"), new Promise((r) => setTimeout(r, 1500))]);
     const { createView } = await import('./render.js');
     view = createView($('#view'), { reducedMotion: () => reducedMotion.matches });
-    new ResizeObserver(() => view.resize()).observe($('#stage'));
-    view.resize();
+    const resizeView = () => {
+      view.resize();
+      // Resizing clears the WebGL canvas; paused/ready runs have no frame loop to repaint it.
+      if (game && game.phase !== 'running') view.draw(game.run, performance.now(), 0, false, game.ghost?.run);
+    };
+    new ResizeObserver(resizeView).observe($('#stage'));
+    resizeView();
   } catch (err) {
     console.error(err);
     viewFailed = true;
@@ -772,8 +784,7 @@ async function shareResult() {
   if (!r) return;
   if (!r.shareFile) {
     const ready = await prepareResultImage(r);
-    toast(ready ? 'Imej sedia. Ketik Kongsi untuk berkongsi.' : 'Imej tidak dapat disediakan. Cuba semula.');
-    return;
+    if (!ready) { toast('Imej tidak dapat disediakan. Cuba semula.'); return; }
   }
   const button = $('#res-share');
   setShareBusy(button, true);
@@ -845,6 +856,7 @@ async function loadTab(tab) {
 // ---------- wiring ----------
 
 function init() {
+  initTouchButtons();
   initFromArked();
   initAppsWarga();
   initProfile({ changed: () => document.body.dataset.screen === 'home' && renderRole() });

@@ -72,6 +72,11 @@ The hub keeps its own copies of `appswarga.js`, `select.js`, `profile-options.js
 
 ## Kejar Lapan
 
+- HUD, touch controls and overlays respect both browser safe areas and AppsWarga's native
+  inset variables, including the legacy `--appswarga-safe-top`. This keeps the timer below
+  iPhone notches/Dynamic Island and controls clear of the home indicator and landscape cutouts.
+  Insets are combined with `max()`, so they are not counted twice. The 3D scene stays edge to edge.
+
 - A three-lane voxel runner through UiTM Shah Alam (Three.js 0.170.0, vendored in
   `kejar-lapan/vendor/` with its licence; no CDN, no build step).
 - The campus clock runs from 07:55 to 8:00. Each landmark (Kolej Perindu, Menara SAAS, Masjid,
@@ -90,7 +95,8 @@ The hub keeps its own copies of `appswarga.js`, `select.js`, `profile-options.js
   versioned in `js/modes.js`; bump `COURSE_VERSION` after physics, tuning or generation changes.
   The existing leaderboards continue to aggregate scores from all modes.
 - **Almari Gaya**: eighteen local milestone rewards across backpacks, outfits, running trails,
-  and accessories. Game-count rewards require 100/150/300/500 completed games; arrival rewards require 100/250 successful arrivals. Earn rewards through completed games, best single-run distance, cumulative distance, active
+  and accessories. Single-run distance goals are 10 km (robe), 5 km (glasses) and 12 km (stars),
+  verified against actual simulated runs. Game-count rewards require 100/150/300/500 completed games; arrival rewards require 100/250 successful arrivals. Earn rewards through completed games, best single-run distance, cumulative distance, active
   play time (60/120/240 minutes), checkpoints, successful arrivals and collected items;
   existing run counts and distance records count too. Equip one unlocked item per body position (head, face, body, back, hand, foot effects),
   or keep the original look. All roles and modes share progress on this device; selections
@@ -124,6 +130,14 @@ The hub keeps its own copies of `appswarga.js`, `select.js`, `profile-options.js
   Swipe, arrow keys / WASD / Space, or the on-screen buttons (a setting).
 - The character comes from the profile (Pelajar, Staf, Alumni, Awam) and can be switched; items
   only change look: points (+25), boost (5 s, smashes obstacles), shield (one hit), jam (+5 s).
+  Every 12 obstacle rows, one guaranteed +5 s clock appears in a seeded random lane.
+  It must be collected in that lane; missing it grants no time. A minimum 60 m support gap
+  leaves room to steer in and back out, even while boosted. This replaces that gap's random items,
+  while other gaps retain their usual pickups. The clock start/cap and checkpoint bonuses are
+  unchanged. A clock-seeking test player clears 12 km on all 30 audited endless seeds using real pickups
+  and ordinary controls; ignoring clocks runs out of time before the goal.
+  Course identity is now `kl-4`, so earlier ghost recordings are ignored after the route change;
+  achievement progress and best-distance stats remain intact.
 - The avatar card also has an image-share icon in its top-right corner. It exports the
   current role, equipped cosmetics, player name and personal totals (best score, best distance,
   active play time, completed games), without requiring a run. Images refresh after equipment,
@@ -132,11 +146,15 @@ The hub keeps its own copies of `appswarga.js`, `select.js`, `profile-options.js
   equipped avatar in one three-quarter action pose, outcome, mode, campus clock, score, distance, duration and
   checkpoints. The image is prepared before the button tap for native file sharing; browsers
   without image sharing download the PNG. Cancelling the share sheet does not download anything.
-  The text-only AppsWarga share bridge is not used for this image flow. `js/share-card.js` owns
+  Inside AppsWarga, sharing uses the native `share` handler with pre-encoded PNG `image` and
+  `imageType`, including Android WebViews without browser file sharing. Outside the app, it uses
+  Web Share files or a PNG download fallback. `js/share-card.js` owns
   rendering and delivery, and temporary portrait rendering releases its WebGL resources.
   Both card footers use the player's saved campus, omitted for public/non-UiTM or missing-campus
   profiles. Both share buttons show a spinner and busy state while preparing the PNG or awaiting
   the native share promise, then reset after success, cancellation or failure.
+  UI buttons activate once on a touch/pen release and suppress the delayed compatibility click;
+  scrolling, cancelled gestures and the game D-pad are excluded, with normal mouse/keyboard input retained.
 - Score: a point a metre, plus items, plus 200 a checkpoint; every run with points goes to
   `arked_record` (at most 100,000 points and 300 a second). Distance shows in m, then km.
 - `js/sim.js` (fixed 60 Hz steps, swept collision) and `js/course.js` (seeded rows that always

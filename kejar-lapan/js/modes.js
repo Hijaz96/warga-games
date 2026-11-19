@@ -2,7 +2,7 @@
 import { hashString, todayKL } from '../../shared/rng.js';
 import { checkpointAt, landmarkFor } from './course.js';
 
-export const COURSE_VERSION = 'kl-2';
+export const COURSE_VERSION = 'kl-4';
 export const MODE_LABELS = { destination: 'Tepat Masa', daily: 'Cabaran Harian', endless: 'Tanpa Henti' };
 const DESTINATIONS = { pelajar: 5, staf: 1, alumni: 4, awam: 3 };
 

@@ -135,7 +135,7 @@ async function createCardImage(data, appearance, filename) {
   text(data.campus, 1006, 1283, 18, '#c4b5fd', 600, 540);
   ctx.textAlign = 'left';
   const blob = await new Promise((resolve, reject) => canvas.toBlob((value) => value ? resolve(value) : reject(new Error('PNG encoding failed')), 'image/png'));
-  return new File([blob], filename, { type: 'image/png' });
+  return prepareImageShare(new File([blob], filename, { type: 'image/png' }));
 }
 
 export function downloadResultImage(file) {
@@ -149,8 +149,40 @@ export function downloadResultImage(file) {
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
 
-/** No text-only fallback. An unsupported or failed file share downloads the PNG. */
-export async function shareResultImage(file, nav = navigator, download = downloadResultImage) {
+const bridgeImages = new WeakMap();
+function imageBase64(file) {
+  if (!bridgeImages.has(file)) {
+    const encoded = file.arrayBuffer().then((buffer) => {
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let offset = 0; offset < bytes.length; offset += 8192) binary += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
+      return btoa(binary);
+    });
+    bridgeImages.set(file, encoded);
+  }
+  return bridgeImages.get(file);
+}
+
+/** Encode before the tap so the native bridge can open its chooser immediately. */
+export async function prepareImageShare(file) {
+  await imageBase64(file);
+  return file;
+}
+
+/** AppsWarga's native image bridge handles Android WebViews without Web Share files. */
+export async function shareResultImage(file, nav = navigator, download = downloadResultImage, bridge = globalThis.window?.appswarga) {
+  if (bridge?.ready && typeof bridge.callHandler === 'function') {
+    const reply = await bridge.callHandler('share', {
+      title: 'Kejar Lapan', image: await imageBase64(file), imageType: file.type,
+    });
+    if (reply?.status === 'success') return 'shared';
+    if (reply?.code === 'CANCELLED') return 'cancelled';
+    // Older hosts can fall back to the browser; native cancellation/errors must not open
+    // a second share sheet or unexpectedly download an image.
+    if (!['UNKNOWN_HANDLER', 'UNSUPPORTED', 'NOT_IMPLEMENTED'].includes(reply?.code)) {
+      throw new Error(reply?.message || 'Native image sharing failed');
+    }
+  }
   try {
     if (nav.share && nav.canShare?.({ files: [file] })) {
       await nav.share({ files: [file], title: 'Kejar Lapan' });

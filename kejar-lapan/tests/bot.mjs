@@ -35,3 +35,17 @@ export function botActions(s) {
   }
   return actions;
 }
+
+
+/** Skilled test player that deliberately steers for visible support clocks between rows. */
+export function clockBotActions(s) {
+  const clock = s.course.items.find((item) => item.support && !item.taken && item.at >= s.distance - 0.9);
+  if (!clock) return botActions(s);
+  const obstacleBefore = s.course.obstacles.some((obstacle) => !obstacle.hit && obstacle.at < clock.at &&
+    obstacle.at + OBSTACLES[obstacle.type].len / 2 >= s.distance - PLAYER_HALF_D);
+  if (obstacleBefore) return botActions(s);
+  const actions = [];
+  if (s.lane !== clock.lane) actions.push(s.lane > clock.lane ? 'left' : 'right');
+  if (s.airborne && (clock.at - s.distance) / s.speed < 0.2) actions.push('slide');
+  return actions;
+}

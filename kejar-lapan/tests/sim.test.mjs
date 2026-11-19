@@ -187,3 +187,21 @@ test('same seed, same run', () => {
   assert.equal(a.score, b.score);
   assert.equal(a.t, b.t);
 });
+
+
+test('a support clock gives +5 s only when its actual lane is reached', () => {
+  const missed = runWith([], { distance: 19, timeLeft: 20 });
+  missed.course.items = [{ id: 2000, lane: 0, at: 20, kind: 'time', taken: false, support: true }];
+  step(missed);
+  assert.equal(missed.picked.time, 0);
+  assert.ok(missed.timeLeft < 20);
+  assert.equal(missed.course.items[0].taken, false);
+  const collected = runWith([], { distance: 19, timeLeft: 20, lane: 0, x: LANES[0] });
+  collected.course.items = [{ id: 2000, lane: 0, at: 20, kind: 'time', taken: false, support: true }];
+  step(collected);
+  assert.equal(collected.picked.time, 1);
+  assert.ok(Math.abs(collected.timeLeft - (25 - STEP)) < 1e-9);
+  assert.equal(collected.course.items[0].taken, true);
+  step(collected);
+  assert.equal(collected.picked.time, 1);
+});
