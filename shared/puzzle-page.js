@@ -1,4 +1,4 @@
-import { Game2048, BlockGame, MemoryGame, XoGame, winningLine, limitForLevel } from './puzzle-engines.js';
+import { Game2048, BlockGame, MemoryGame } from './puzzle-engines.js';
 import { initAppsWarga, appsWargaHaptic, closeMiniApp, notifyAppReady } from './appswarga.js';
 import { initFromArked, backToArked } from './arked-link.js';
 import { initProfile, loadProfile, withProfile } from './profile.js';
@@ -13,12 +13,10 @@ const games = {
   '2048': { name: '2048', icon: '2048', description: 'Gabungkan nombor hingga mencapai 2048.', help: 'Leret papan, gunakan kekunci anak panah, atau butang arah. Dua nombor yang sama bergabung. Capai 2048 dan teruskan jika mahu.', create: seed => new Game2048(seed) },
   'blok': { name: 'Teka Blok', icon: '▦', description: 'Susun kepingan dan lengkapkan baris atau lajur.', help: 'Pilih satu kepingan, kemudian ketik petak pada papan untuk meletakkannya. Lengkapkan baris atau lajur untuk markah tambahan. Permainan tamat apabila tiada kepingan yang boleh diletakkan.', create: seed => new BlockGame(seed) },
   'memori': { name: 'Memori', icon: '✦', description: 'Cari pasangan kad sebelum masa tamat.', help: 'Buka dua kad untuk mencari pasangan. Selesaikan semua pasangan untuk naik ke tahap seterusnya. Masa yang tersedia berubah mengikut tahap.', create: seed => new MemoryGame(seed) },
-  'xo': { name: 'XO', icon: 'XO', description: 'Lawan komputer dalam permainan X dan O.', help: 'Letak tiga X sebaris untuk menang. Pilih tahap kesukaran dan mod sebelum memulakan pusingan. Dalam Mod Hilang, simbol tertua hilang selepas simbol keempat diletakkan.', create: seed => new XoGame(seed, xoDifficulty, xoMode) },
 };
 const config = games[gameId];
 if (!config) throw new Error(`Unknown game: ${gameId}`);
 
-let xoDifficulty = 'normal', xoMode = 'classic';
 let game = null, playedMs = 0, lastTick = 0, lastResult = null, boardTab = 'daily';
 let selectedPiece = 0, settleTimer = 0, timer = 0, boardRequest = 0;
 const statsKey = `${gameId}.stats`;
@@ -63,13 +61,12 @@ function renderGame() {
   if (!game) return;
   $('#game-score').textContent = number(game.score);
   $('#game-mode').textContent = config.name;
-  const options = $('#game-options'), controls = $('#game-controls'), grid = $('#game-grid');
-  options.replaceChildren(); controls.replaceChildren(); grid.replaceChildren();
+  const controls = $('#game-controls'), grid = $('#game-grid');
+  controls.replaceChildren(); grid.replaceChildren();
   grid.className = 'puzzle-grid';
   if (gameId === '2048') render2048(grid, controls);
   if (gameId === 'blok') renderBlock(grid, controls);
   if (gameId === 'memori') renderMemory(grid);
-  if (gameId === 'xo') renderXo(grid, options);
 }
 function render2048(grid, controls) {
   grid.classList.add('four'); grid.setAttribute('aria-label', 'Papan 2048');
@@ -96,20 +93,12 @@ function renderMemory(grid) {
   game.deck.forEach((value, i) => { const shown = game.matched[i] || game.revealed.includes(i); const b = h('button', `puzzle-cell${game.matched[i] ? ' matched' : ''}`, shown ? symbols[value] : '?'); b.type = 'button'; b.disabled = shown || game.revealed.length === 2; b.setAttribute('aria-label', `Kad ${i + 1}: ${shown ? symbols[value] : 'tertutup'}`); b.addEventListener('click', () => { if (!game.flip(i)) return; appsWargaHaptic('selection'); clearTimeout(settleTimer); if (game.revealed.length === 2) settleTimer = setTimeout(() => { if (game && document.body.dataset.screen === 'game') { game.settle(); renderGame(); } }, 850); renderGame(); }); grid.append(b); });
   $('#game-status').textContent = `Tahap ${game.level} · Pasangan ${game.pairs}/${game.deck.length / 2} · Masa ${Math.ceil(game.timeLeft / 1000)}s`;
 }
-function renderXo(grid, options) {
-  grid.classList.add('three'); grid.setAttribute('aria-label', 'Papan XO');
-  const line = winningLine(game.board) ?? [], vanish = game.mode === 'vanishing' ? [game.marks[1][0], game.marks[2][0]] : [];
-  game.board.forEach((mark, i) => { const b = h('button', `puzzle-cell${line.includes(i) ? ' winning' : ''}${vanish.includes(i) ? ' preview' : ''}`, mark === 1 ? 'X' : mark === 2 ? 'O' : ''); b.type = 'button'; b.disabled = Boolean(mark || game.over || game.pendingAi); b.setAttribute('aria-label', `Petak ${i + 1}: ${mark === 1 ? 'X' : mark === 2 ? 'O' : 'kosong'}`); b.addEventListener('click', () => { if (!game.human(i)) return; appsWargaHaptic('selection'); renderGame(); if (game.over) return finish('complete'); setTimeout(() => { if (game && document.body.dataset.screen === 'game' && game.ai()) { renderGame(); if (game.over) finish('complete'); } }, 300); }); grid.append(b); });
-  $('#game-status').textContent = game.outcome === 1 ? 'Anda menang!' : game.outcome === 2 ? 'Komputer menang.' : game.outcome === 'draw' ? 'Seri.' : game.pendingAi ? 'Komputer sedang berfikir…' : 'Giliran anda: X';
-  const difficulty = h('select'); difficulty.setAttribute('aria-label', 'Tahap kesukaran'); for (const [value, text] of [['easy', 'Mudah'], ['normal', 'Biasa'], ['hard', 'Sukar']]) difficulty.append(new Option(text, value)); difficulty.value = game.difficulty; difficulty.addEventListener('change', () => { xoDifficulty = difficulty.value; startGame(); });
-  const mode = h('select'); mode.setAttribute('aria-label', 'Mod permainan'); for (const [value, text] of [['classic', 'Klasik'], ['vanishing', 'Mod Hilang']]) mode.append(new Option(text, value)); mode.value = game.mode; mode.addEventListener('change', () => { xoMode = mode.value; startGame(); }); options.append(difficulty, mode);
-}
 function finish(reason = 'manual') {
   if (!game || lastResult?.game === game) return;
   stopClock(); clearTimeout(settleTimer);
   game.over = true;
   const seconds = Math.min(86400, Math.max(1, Math.round(playedMs / 1000)));
-  const result = { game, score: game.score, seconds, reason, detail: gameId === 'memori' ? `Tahap ${game.highestCompleted} selesai` : gameId === 'blok' ? `${game.lines} garisan` : gameId === '2048' ? `${game.moves} gerakan` : game.outcome === 1 ? 'Anda menang' : game.outcome === 2 ? 'Komputer menang' : game.outcome === 'draw' ? 'Seri' : 'Pusingan ditamatkan', submit: { status: 'pending' } };
+  const result = { game, score: game.score, seconds, reason, detail: gameId === 'memori' ? `Tahap ${game.highestCompleted} selesai` : gameId === 'blok' ? `${game.lines} garisan` : gameId === '2048' ? `${game.moves} gerakan` : 'Pusingan ditamatkan', submit: { status: 'pending' } };
   lastResult = result;
   const s = stats(); s.played++; s.best = Math.max(s.best, result.score); storeSet(statsKey, s);
   appsWargaHaptic('notification', result.score > 0 ? 'success' : 'warning');

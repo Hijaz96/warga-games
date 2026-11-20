@@ -1,4 +1,4 @@
-// Rules adapted from UiTM PlayZone's 2048, Block, progressive Memory and XO engines.
+// Rules adapted from UiTM PlayZone's 2048, Block and progressive Memory engines.
 export function seededRandom(seed) {
   let state = (seed >>> 0) || 0x6d2b79f5;
   return () => { state ^= state << 13; state ^= state >>> 17; state ^= state << 5; return (state >>> 0) / 4294967296; };
@@ -88,49 +88,4 @@ export class MemoryGame {
     return true;
   }
   settle() { if (this.revealed.length === 2) this.revealed = []; }
-}
-
-const lines = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
-export const winningLine = (board) => lines.find(line => board[line[0]] && board[line[0]] === board[line[1]] && board[line[0]] === board[line[2]]);
-export const winner = (board) => { const line = winningLine(board); return line ? board[line[0]] : board.every(Boolean) ? 'draw' : undefined; };
-function minimax(board, mark, depth) {
-  const outcome = winner(board);
-  if (outcome !== undefined) return outcome === 2 ? 10 - depth : outcome === 1 ? depth - 10 : 0;
-  const scores = [];
-  for (let i = 0; i < 9; i++) if (!board[i]) { board[i] = mark; scores.push(minimax(board, mark === 1 ? 2 : 1, depth + 1)); board[i] = 0; }
-  return mark === 2 ? Math.max(...scores) : Math.min(...scores);
-}
-export function bestMove(board) {
-  let best = -Infinity, move;
-  for (let i = 0; i < 9; i++) if (!board[i]) { const next = [...board]; next[i] = 2; const value = minimax(next, 1, 0); if (value > best) { best = value; move = i; } }
-  return move;
-}
-function placeVanishing(board, marks, mark, index) { board[index] = mark; marks[mark].push(index); if (marks[mark].length > 3) board[marks[mark].shift()] = 0; }
-export class XoGame {
-  constructor(seed, difficulty = 'normal', mode = 'classic') { this.random = seededRandom(seed); this.difficulty = difficulty; this.mode = mode; this.board = Array(9).fill(0); this.marks = { 1: [], 2: [] }; this.seen = new Map(); this.seen.set(this.key(1), 1); this.moves = 0; this.score = 0; this.outcome = undefined; this.over = false; }
-  key(next) { return `${this.board.join('')}:${next}:${this.marks[1].join(',')}:${this.marks[2].join(',')}`; }
-  apply(mark, index) { if (this.mode === 'vanishing') placeVanishing(this.board, this.marks, mark, index); else this.board[index] = mark; this.moves++; }
-  check(next) {
-    const line = winningLine(this.board);
-    this.outcome = line ? this.board[line[0]] : this.mode === 'classic' && this.board.every(Boolean) ? 'draw' : undefined;
-    if (this.mode === 'vanishing' && !this.outcome) { const key = this.key(next), count = (this.seen.get(key) ?? 0) + 1; this.seen.set(key, count); if (count >= 3 || this.moves >= 100) this.outcome = 'draw'; }
-    if (this.outcome) { this.score = this.outcome === 1 ? 100 : this.outcome === 'draw' ? 50 : 0; this.over = true; }
-  }
-  human(index) { if (this.over || this.pendingAi || !Number.isInteger(index) || this.board[index] !== 0) return false; this.apply(1, index); this.check(2); this.pendingAi = !this.over; return true; }
-  ai() {
-    if (this.over || !this.pendingAi) return false;
-    const legal = this.board.flatMap((mark, i) => mark ? [] : [i]);
-    const optimal = this.difficulty === 'hard' || (this.difficulty === 'normal' && this.random() < .7);
-    let move;
-    if (optimal) {
-      if (this.mode === 'classic') move = bestMove(this.board);
-      else {
-        let best = -Infinity;
-        for (const i of legal) { const board = [...this.board], marks = { 1: [...this.marks[1]], 2: [...this.marks[2]] }; placeVanishing(board, marks, 2, i); if (winningLine(board)?.every(cell => board[cell] === 2)) { move = i; break; } let threats = 0; for (let reply = 0; reply < 9; reply++) if (!board[reply]) { const after = [...board], ages = { 1: [...marks[1]], 2: [...marks[2]] }; placeVanishing(after, ages, 1, reply); if (winningLine(after)?.every(cell => after[cell] === 1)) threats++; } const value = -threats * 100 + (i === 4 ? 2 : [0, 2, 6, 8].includes(i) ? 1 : 0); if (value > best) { best = value; move = i; } }
-      }
-    }
-    move ??= legal[Math.floor(this.random() * legal.length)];
-    if (move === undefined) return false;
-    this.apply(2, move); this.pendingAi = false; this.check(1); return true;
-  }
 }

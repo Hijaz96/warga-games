@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Game2048, BlockGame, MemoryGame, XoGame, moveBoard, winningLine } from '../shared/puzzle-engines.js';
+import { Game2048, BlockGame, MemoryGame, moveBoard } from '../shared/puzzle-engines.js';
 
 test('2048 merges equal tiles once and accumulates points', () => {
   const result = moveBoard([2, 2, 2, 2, ...Array(12).fill(0)], 'left');
@@ -31,14 +31,4 @@ test('memory game matches pairs and advances after a full deck', () => {
   assert.equal(game.highestCompleted, 1);
   assert.equal(game.level, 2);
   assert.equal(game.score, 450);
-});
-
-test('XO detects a win and stops the round', () => {
-  const game = new XoGame(1);
-  game.board = [1, 1, 0, 2, 2, 0, 0, 0, 0];
-  assert.equal(game.human(2), true);
-  assert.deepEqual(winningLine(game.board), [0, 1, 2]);
-  assert.equal(game.score, 100);
-  assert.equal(game.over, true);
-  assert.equal(game.human(6), false);
 });
