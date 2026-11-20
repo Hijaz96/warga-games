@@ -1,17 +1,26 @@
-// Kejar Lapan: sound. Short synthesised blips with the Web Audio API, no sound files.
+// Kejar Lapan: short sound effects plus original, streamed campus music.
+import { createMusicPlayer } from './music.js';
+import { createSoundSpace } from './sound-space.js';
 
 let ctx = null;
 let muted = false;
+let music = null;
+let space = null;
 
 export const setMuted = (m) => {
   muted = m;
+  if (m) stopMusic();
 };
 
 /** Creates or wakes the audio context; call from a tap or key press (browsers require one). */
 export function unlockAudio() {
   if (!ctx) {
     const AC = window.AudioContext || window.webkitAudioContext;
-    if (AC) ctx = new AC();
+    if (AC) {
+      ctx = new AC();
+      space = createSoundSpace(ctx);
+      music = createMusicPlayer(ctx, { destination: space.input });
+    }
   }
   if (ctx?.state === 'suspended') ctx.resume();
 }
@@ -46,7 +55,19 @@ export function play(name) {
   }
   g.gain.setValueAtTime(gain, now);
   g.gain.exponentialRampToValueAtTime(0.001, now + length);
-  osc.connect(g).connect(ctx.destination);
+  osc.connect(g).connect(space.input);
   osc.start(now);
   osc.stop(now + length + 0.02);
+}
+
+/** Call only during active gameplay. Loading and transitions never change the simulation. */
+export function updateMusic(area, elapsed, { boosted = false, shielded = false } = {}) {
+  if (muted) return;
+  space?.setShield(shielded);
+  music?.update(area, elapsed, { boosted });
+}
+
+export function stopMusic() {
+  music?.stop();
+  space?.setShield(false, true);
 }

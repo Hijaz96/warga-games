@@ -772,8 +772,19 @@ const LAMP = (x, z, dir) => [
   [0.5, 0.22, 0.35, x + dir * 1.2, 5.38, z, 0xfef9c3],
 ];
 
-/** Trees and lamps for one 40 m stretch of road, merged into one geometry. */
-export function sceneryGeometry(rand) {
+const BENCH = (x, z, colour = 0x92400e) => [
+  [1.3, 0.25, 3.8, x, 0.85, z, colour],
+  [0.25, 1.3, 3.8, x + Math.sign(x) * 0.55, 1.4, z, colour],
+  ...[-1.3, 1.3].map((dz) => [1, 0.8, 0.2, x, 0.4, z + dz, 0x475569]),
+];
+const PLANTER = (x, z, flower = 0xf472b6) => [
+  [2, 0.7, 3, x, 0.35, z, 0xe2d5bc],
+  [1.7, 0.6, 2.7, x, 0.95, z, 0x3f7d38],
+  ...[-0.8, 0.8].map((dz) => [0.5, 0.4, 0.5, x, 1.4, z + dz, flower]),
+];
+
+/** Roadside props stay outside the playable lanes and merge into one draw call per stretch. */
+export function sceneryGeometry(rand, area = 'civic') {
   const boxes = [];
   for (const z of [-10, 10]) {
     boxes.push(...TREE(-10.5 - rand() * 2.5, z + rand() * 4 - 2, 0.85 + rand() * 0.3));
@@ -782,6 +793,61 @@ export function sceneryGeometry(rand) {
     boxes.push(...TREE(17 + rand() * 6, z + rand() * 8, 1 + rand() * 0.4));
   }
   boxes.push(...LAMP(-6.3, 0, 1), ...LAMP(6.3, 0, -1));
+  for (const side of [-1, 1]) {
+    const x = side * 10.4;
+    if (area === 'library') {
+      boxes.push(...BENCH(x, -3), ...PLANTER(x, 14, 0xfde68a));
+      // Covered reading walk and a book-return cabinet.
+      boxes.push([3.2, 0.35, 14, x, 4, -8, 0x334155]);
+      for (const z of [-14, -2]) boxes.push([0.25, 4, 0.25, x + side, 2, z, 0xe2e8f0]);
+      boxes.push([1.2, 2.1, 1.8, x, 1.05, 5, 0x1e3a8a], [0.1, 0.2, 1.2, x - side * 0.65, 1.4, 5, 0xfacc15]);
+    } else if (area === 'mosque') {
+      // Cream colonnades, trimmed hedges and a shallow reflecting pool.
+      boxes.push([3, 0.35, 27, x, 4.8, 0, 0xfef3c7]);
+      for (const z of [-12, -4, 4, 12]) boxes.push([0.45, 4.6, 0.45, x + side, 2.3, z, 0xf8fafc]);
+      boxes.push([1.2, 1, 25, side * 14, 0.5, 0, 0x347853], [3, 0.15, 9, side * 18, 0.1, 0, 0x67c8cd]);
+    } else if (area === 'college') {
+      boxes.push(...BENCH(x, -12), ...PLANTER(x, 12));
+      // Bicycle racks and a residential courtyard pergola.
+      for (const z of [-4, -1, 2, 5]) {
+        boxes.push([1.3, 0.15, 0.15, x, 1.3, z, 0x475569], [0.15, 1.3, 0.15, x - 0.6, 0.65, z, 0x475569], [0.15, 1.3, 0.15, x + 0.6, 0.65, z, 0x475569]);
+      }
+      for (const z of [-14, 14]) boxes.push([0.25, 3.4, 0.25, side * 16, 1.7, z, 0x92400e]);
+      for (let z = -14; z <= 14; z += 4) boxes.push([4, 0.2, 0.5, side * 16, 3.5, z, 0xb97d50]);
+    } else if (area === 'engineering') {
+      // Yellow safety rails, steel frames and stacked materials.
+      for (const z of [-12, 0, 12]) {
+        boxes.push([0.35, 5, 0.35, x, 2.5, z, 0x64748b], [4.5, 0.35, 0.35, x + side * 2, 5, z, 0x64748b]);
+        boxes.push([0.25, 1.5, 0.25, x - side, 0.75, z, 0xfacc15]);
+      }
+      boxes.push([0.2, 0.2, 26, x - side, 1.4, 0, 0xfacc15]);
+      for (const y of [0.4, 1, 1.6]) boxes.push([3, 0.4, 7, side * 16, y, 7, 0x94a3b8]);
+      boxes.push([3.5, 2, 4, side * 16, 1, -9, 0xd97706]);
+    } else if (area === 'sports') {
+      // Track, courts, courtside fencing and basketball backboards.
+      boxes.push([8, 0.08, 34, side * 17, 0.02, 0, 0xb65f43], [5, 0.1, 26, side * 17, 0.08, 0, 0x3b82a0]);
+      for (const z of [-16, 0, 16]) boxes.push([0.15, 2.8, 0.15, x, 1.4, z, 0x64748b]);
+      for (const y of [0.7, 1.4, 2.1]) boxes.push([0.1, 0.07, 34, x, y, 0, 0x94a3b8]);
+      boxes.push([0.25, 4, 0.25, side * 15, 2, 12, 0x475569], [0.2, 1.4, 2.2, side * 15, 4.1, 12, 0xf8fafc], [1, 0.12, 0.8, side * 14.5, 3.6, 12, 0xf97316]);
+      boxes.push(...BENCH(x + side * 2, -10, 0x7c3aed));
+    } else if (area === 'health') {
+      boxes.push(...PLANTER(x, -12, 0xffffff), ...PLANTER(x, 12, 0xffffff), ...BENCH(x, 4, 0x0d9488));
+      boxes.push([3, 0.3, 8, x, 3.2, 2, 0x5eb4af]);
+      for (const z of [-1, 5]) boxes.push([0.2, 3.2, 0.2, x + side, 1.6, z, 0xf8fafc]);
+    } else if (area === 'faculty') {
+      boxes.push(...BENCH(x, 10), ...PLANTER(x, -12, 0xa78bfa));
+      // Faculty noticeboards and outdoor study tables.
+      boxes.push([0.3, 2, 4, x, 2.5, 0, 0x581c87], [0.32, 1.5, 3.4, x, 2.5, 0, 0xfef3c7], [0.2, 2, 0.2, x, 1, 0, 0x475569]);
+      boxes.push([3, 0.25, 4, side * 16, 1.5, 5, 0xe2e8f0], [0.6, 1.5, 0.6, side * 16, 0.75, 5, 0x64748b]);
+    } else if (area === 'plaza') {
+      boxes.push([10, 0.1, 32, side * 15, 0, 0, 0xe7daca], ...BENCH(x, -12), ...PLANTER(x, 12, 0xfacc15));
+      // Low fountain basins: blue water, pale stone rims and a central jet.
+      boxes.push([4, 0.6, 6, side * 15, 0.3, 0, 0xcbd5e1], [3.4, 0.08, 5.4, side * 15, 0.65, 0, 0x38bdf8], [0.35, 2.6, 0.35, side * 15, 1.8, 0, 0xbae6fd]);
+    } else {
+      boxes.push(...PLANTER(x, -10, 0xfacc15), ...BENCH(x, 10));
+      boxes.push([0.2, 6, 0.2, side * 14, 3, 0, 0xcbd5e1], [0.12, 2, 3, side * 14, 4.7, 1.5, 0x581c87], [0.14, 0.4, 3, side * 14, 5.5, 1.5, 0xfacc15]);
+    }
+  }
   return voxels(boxes);
 }
 

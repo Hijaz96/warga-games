@@ -1,6 +1,7 @@
 // Kejar Lapan: the course. A seeded generator lays obstacle rows and items ahead of the player,
 // always leaving a way through, and places the landmark checkpoints. Pure functions, no DOM.
 import { mulberry32 } from '../../shared/rng.js';
+import { campusAt } from './campus.js';
 import {
   SPEED,
   ROWS,
@@ -45,10 +46,12 @@ export const passable = (type) => !type || OBSTACLES[type].clear !== 'none';
  * One row of obstacles: [left, middle, right], each an obstacle type or null. Harder tiers fill
  * more lanes, but at least one lane is always passable (empty, or jumped / slid through).
  */
-export function pattern(rng, tier) {
+export function pattern(rng, tier, area = null) {
   const pick = (list) => list[Math.floor(rng() * list.length)];
-  const action = () => (rng() < 0.3 ? 'barrier' : pick(JUMPERS));
-  const any = () => (rng() < 0.35 ? pick(BLOCKERS) : action());
+  const jumpers = area?.jumpers ?? JUMPERS;
+  const blockers = area?.blockers ?? BLOCKERS;
+  const action = () => (rng() < (area?.slideChance ?? 0.3) ? 'barrier' : pick(jumpers));
+  const any = () => (rng() < 0.35 ? pick(blockers) : action());
   // Lanes in a random order: the first ones get obstacles.
   const lanes = [0, 1, 2];
   for (let i = 2; i > 0; i--) {
@@ -70,7 +73,7 @@ export function pattern(rng, tier) {
     cells[lanes[0]] = any();
     cells[lanes[1]] = any();
   } else if (r < chances[2]) {
-    cells[lanes[0]] = pick(BLOCKERS);
+    cells[lanes[0]] = pick(blockers);
     cells[lanes[1]] = action();
     cells[lanes[2]] = action();
   } else {
@@ -110,7 +113,7 @@ function placeItems(course, mid, supportRow = false) {
 export function extendCourse(course, until) {
   while (course.nextRowAt <= until) {
     const at = course.nextRowAt;
-    pattern(course.rng, tierAt(at)).forEach((type, lane) => {
+    pattern(course.rng, tierAt(at), campusAt(at)).forEach((type, lane) => {
       if (type) course.obstacles.push({ id: course.nextId++, at, lane, type, hit: false });
     });
     course.rowsPlaced++;

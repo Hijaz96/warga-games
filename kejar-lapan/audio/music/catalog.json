@@ -1,0 +1,110 @@
+[
+  {
+    "id": "civic",
+    "title": "Pagi di Kampus",
+    "style": "Bright adventure march / brass, strings and steady drums",
+    "bpm": 112,
+    "meter": "4/4",
+    "key": "D major",
+    "groove": "march",
+    "bars": 42,
+    "seconds": 90,
+    "file": "civic.mp3"
+  },
+  {
+    "id": "college",
+    "title": "Langkah Kolej",
+    "style": "Laid-back swung city pop / electric piano, finger bass and rim clicks",
+    "bpm": 104,
+    "meter": "4/4",
+    "key": "F major",
+    "groove": "swing",
+    "bars": 39,
+    "seconds": 90,
+    "file": "college.mp3"
+  },
+  {
+    "id": "library",
+    "title": "Halaman Ilmu",
+    "style": "Slow music-box puzzle / celesta, warm pads and brushed percussion",
+    "bpm": 80,
+    "meter": "4/4",
+    "key": "C major",
+    "groove": "brush",
+    "bars": 30,
+    "seconds": 90,
+    "file": "library.mp3"
+  },
+  {
+    "id": "mosque",
+    "title": "Laman Teduh",
+    "style": "Peaceful drum-free garden / breathy flute, long strings and sparse mallets",
+    "bpm": 64,
+    "meter": "4/4",
+    "key": "D major / pentatonic melody",
+    "groove": "free",
+    "bars": 24,
+    "seconds": 90,
+    "file": "mosque.mp3"
+  },
+  {
+    "id": "sports",
+    "title": "Rentak Juara",
+    "style": "Fast arcade sprint / pulse lead, driving octaves and four-on-the-floor drums",
+    "bpm": 160,
+    "meter": "4/4",
+    "key": "E minor",
+    "groove": "arcade",
+    "bars": 60,
+    "seconds": 90,
+    "file": "sports.mp3"
+  },
+  {
+    "id": "health",
+    "title": "Nafas Baharu",
+    "style": "Gentle restorative piano / airy choir and a soft heartbeat pulse",
+    "bpm": 88,
+    "meter": "4/4",
+    "key": "G major",
+    "groove": "heartbeat",
+    "bars": 33,
+    "seconds": 90,
+    "file": "health.mp3"
+  },
+  {
+    "id": "engineering",
+    "title": "Mesin Mimpi",
+    "style": "Mechanical breakbeat / metallic FM, sequenced bass and syncopated drums",
+    "bpm": 144,
+    "meter": "4/4",
+    "key": "C minor",
+    "groove": "machine",
+    "bars": 54,
+    "seconds": 90,
+    "file": "engineering.mp3"
+  },
+  {
+    "id": "faculty",
+    "title": "Idea Berlari",
+    "style": "Curious digital adventure / plucked sixteenth-note arpeggios and light drums",
+    "bpm": 120,
+    "meter": "4/4",
+    "key": "A lydian",
+    "groove": "arpeggio",
+    "bars": 45,
+    "seconds": 90,
+    "file": "faculty.mp3"
+  },
+  {
+    "id": "plaza",
+    "title": "Cahaya Cendekia",
+    "style": "Sunny three-beat plaza dance / marimba, hand drums and pizzicato strings",
+    "bpm": 96,
+    "meter": "3/4",
+    "key": "G major",
+    "groove": "waltz",
+    "bars": 48,
+    "seconds": 90,
+    "file": "plaza.mp3"
+  }
+]

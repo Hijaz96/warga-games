@@ -2,10 +2,11 @@
 import { STEP, ROLES, BOOST, LANDMARKS } from './config.js';
 import { createRun, step, nextCheckpoint, runSeconds } from './sim.js';
 import { landmarkFor } from './course.js';
+import { campusAt } from './campus.js';
 import { formatDistance, formatTime, formatClock, formatPoints, formatDate } from './score.js';
 import { initTouchButtons } from './touch-buttons.js';
 import { initInput } from './input.js';
-import { play, unlockAudio, setMuted } from './audio.js';
+import { play, unlockAudio, setMuted, updateMusic, stopMusic } from './audio.js';
 import { randomSeed } from '../../shared/rng.js';
 import { initAppsWarga, appsWargaHaptic, closeMiniApp, notifyAppReady } from '../../shared/appswarga.js';
 import { initFromArked, backToArked } from '../../shared/arked-link.js';
@@ -198,7 +199,7 @@ function renderMode() {
 function renderSettings() {
   const s = settings();
   $('#set-sound').setAttribute('aria-checked', String(s.sound));
-  $('#set-sound-hint').textContent = s.sound ? 'Kesan bunyi semasa berlari' : 'Senyap';
+  $('#set-sound-hint').textContent = s.sound ? 'Muzik retro & kesan bunyi' : 'Senyap';
   $('#set-pad').setAttribute('aria-checked', String(s.pad));
   $('#set-pad-hint').textContent = s.pad ? 'Butang arah di skrin' : 'Leret pada skrin sahaja';
   setMuted(!s.sound);
@@ -455,6 +456,7 @@ function begin() {
   if (!game || game.phase === 'running' || game.phase === 'over') return;
   unlockAudio();
   game.phase = 'running';
+  updateMusic(campusAt(game.run.distance).id, game.run.t, { boosted: game.run.boostT > 0, shielded: game.run.shield });
   game.last = 0;
   overlay(null);
   cancelAnimationFrame(rafId);
@@ -464,12 +466,14 @@ function begin() {
 function pause() {
   if (game?.phase !== 'running') return;
   game.phase = 'paused';
+  stopMusic();
   game.queue.length = 0;
   cancelAnimationFrame(rafId);
   overlay('Rehat', 'Jam kampus berhenti seketika.', 'Sambung', begin);
 }
 
 function stopGame() {
+  stopMusic();
   cancelAnimationFrame(rafId);
   game = null;
   overlay(null);
@@ -506,6 +510,7 @@ function frame(now) {
   handleEvents(events, dt);
   view.onEvents(g.run, events);
   view.draw(g.run, now, dt, true, g.ghost?.run);
+  updateMusic(campusAt(g.run.distance).id, g.run.t, { boosted: g.run.boostT > 0, shielded: g.run.shield });
   renderHud();
   if (g.run.status !== 'running') return finish();
   rafId = requestAnimationFrame(frame);
@@ -617,6 +622,7 @@ function renderHud() {
 }
 
 function finish() {
+  stopMusic();
   const g = game;
   g.phase = 'over';
   const run = g.run;

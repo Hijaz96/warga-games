@@ -19,6 +19,7 @@ const TYPES = {
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.json': 'application/json',
+  '.mp3': 'audio/mpeg',
 };
 const port = Number(process.argv[2] || process.env.PORT || 8080);
 
@@ -42,7 +43,27 @@ createServer(async (req, res) => {
   try {
     if ((await stat(file)).isDirectory()) file = join(file, 'index.html');
     const body = await readFile(file);
-    res.writeHead(200, { 'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store' });
+    const headers = {
+      'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream',
+      'Cache-Control': 'no-store',
+      'Accept-Ranges': 'bytes',
+    };
+    // Browser audio needs byte ranges to seek to the shared musical timeline.
+    const range = req.headers.range;
+    if (range) {
+      const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+      const suffix = match && !match[1];
+      const start = match ? (suffix ? Math.max(0, body.length - Number(match[2])) : Number(match[1])) : NaN;
+      const end = match ? (suffix || !match[2] ? body.length - 1 : Math.min(body.length - 1, Number(match[2]))) : NaN;
+      if (!match || (!match[1] && !match[2]) || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start > end || start >= body.length) {
+        res.writeHead(416, { ...headers, 'Content-Range': `bytes */${body.length}` }).end();
+        return;
+      }
+      res.writeHead(206, { ...headers, 'Content-Range': `bytes ${start}-${end}/${body.length}`, 'Content-Length': end - start + 1 });
+      res.end(body.subarray(start, end + 1));
+      return;
+    }
+    res.writeHead(200, { ...headers, 'Content-Length': body.length });
     res.end(body);
   } catch {
     res.writeHead(404).end('Not found');

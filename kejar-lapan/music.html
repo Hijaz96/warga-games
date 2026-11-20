@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ms">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#201335">
+<title>Muzik Kejar Lapan</title>
+<style>
+  *{box-sizing:border-box}body{margin:0;background:#160e25;color:#f9f5ff;font:16px/1.5 system-ui,sans-serif}
+  main{max-width:1000px;margin:auto;padding:32px 20px 60px}a{color:#fde68a}h1{font-size:clamp(28px,6vw,44px);margin:24px 0 8px}
+  p{color:#cec3df}.tracks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px;margin-top:28px}.pace{color:#fde68a;font-size:13px;min-height:0}
+  article{background:#281b3c;border:1px solid #4a365f;border-radius:16px;padding:20px}h2{margin:4px 0;font-size:21px}
+  small{color:#facc15}article p{font-size:14px;min-height:42px}audio{width:100%;margin-top:12px}
+</style>
+<main>
+  <a href="./">← Kejar Lapan</a>
+  <h1>Rentak Kampus</h1>
+  <p>Sembilan suasana, sembilan rentak. Daripada laman yang tenang hingga larian penuh tenaga—setiap lagu berdurasi 90 saat.</p>
+  <div class="tracks" id="tracks"></div>
+</main>
+<script type="module">
+  const areas={civic:'Canselori',college:'Kolej',library:'PTAR',mosque:'Masjid',sports:'Sukan',health:'Kesihatan',engineering:'Kejuruteraan',faculty:'Fakulti',plaza:'Dataran Cendekia'};
+  const response=await fetch('./audio/music/catalog.json');
+  for(const track of await response.json()){
+    const card=document.createElement('article');
+    const area=document.createElement('small');area.textContent=areas[track.id];
+    const title=document.createElement('h2');title.textContent=track.title;
+    const style=document.createElement('p');style.textContent=track.style;
+    const pace=document.createElement('p');pace.className='pace';pace.textContent=`${track.bpm} BPM · ${track.meter} · ${track.key}`;
+    const audio=document.createElement('audio');audio.controls=true;audio.preload='none';audio.src=`./audio/music/${track.file}?v=2`;
+    audio.setAttribute('aria-label',track.title);
+    audio.addEventListener('play',()=>{for(const other of document.querySelectorAll('audio'))if(other!==audio)other.pause()});
+    card.append(area,title,style,pace,audio);document.querySelector('#tracks').append(card);
+  }
+</script>
+</html>

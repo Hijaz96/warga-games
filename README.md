@@ -72,6 +72,16 @@ The hub keeps its own copies of `appswarga.js`, `select.js`, `profile-options.js
 
 ## Kejar Lapan
 
+- Each of the nine campus scenery types has an original 90-second retro game score
+  with its own tempo (64–160 BPM), key, groove and instrumentation. Songs loop and crossfade, follow
+  the sound toggle, and stop on pause, results or navigation. Listen to all tracks at
+  [`kejar-lapan/music.html`](kejar-lapan/music.html).
+  Boost plays music at 1.35× speed with pitch preserved. Shield adds short stereo
+  room reverb and softens high frequencies on music and sound effects; both effects
+  clear when the corresponding power-up ends, and reset on pause or mute.
+  Regenerate the MP3s and catalog with `python3 tools/compose-kejar-music.py`
+  (requires NumPy and FFmpeg; no build step is needed to play the game).
+
 - HUD, touch controls and overlays respect both browser safe areas and AppsWarga's native
   inset variables, including the legacy `--appswarga-safe-top`. This keeps the timer below
   iPhone notches/Dynamic Island and controls clear of the home indicator and landscape cutouts.

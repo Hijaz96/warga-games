@@ -2,6 +2,7 @@
 // Everything is built once (models.js) and pooled, so a long run doesn't grow memory.
 import * as THREE from '../vendor/three.module.min.js';
 import { createTrailEffect } from './trails.js';
+import { campusAt } from './campus.js';
 import { LANES, SHIELD } from './config.js';
 import { checkpointAt, landmarkFor } from './course.js';
 import { sliding } from './sim.js';
@@ -60,6 +61,7 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x93c5fd);
   scene.fog = new THREE.Fog(0xdbeafe, 70, 190);
+  const fogTarget = new THREE.Color();
 
   const camera = new THREE.PerspectiveCamera(CAM.fov, 1, 0.1, 400);
   camera.position.set(0, CAM.y, CAM.z);
@@ -99,21 +101,29 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
     walk: new THREE.BoxGeometry(3.2, 0.22, SEG_LEN),
   };
   const segments = [];
+  // At most three scenery variants per area, shared by all seven recycled road segments.
+  const sceneryCache = new Map();
+  function areaScenery(id, variant) {
+    const key = `${id}:${variant}`;
+    if (!sceneryCache.has(key)) sceneryCache.set(key, sceneryGeometry(lcg(1000 + variant * 77), id));
+    return sceneryCache.get(key);
+  }
   for (let i = 0; i < SEGMENTS; i++) {
     const g = new THREE.Group();
-    const grass = new THREE.Mesh(segGeo.grass, mats.grass);
+    const grass = new THREE.Mesh(segGeo.grass, mats.grass.clone());
     grass.rotation.x = -Math.PI / 2;
     grass.position.y = -0.06;
     grass.receiveShadow = true;
     const road = new THREE.Mesh(segGeo.road, mats.road);
     road.rotation.x = -Math.PI / 2;
     road.receiveShadow = true;
-    const walkL = new THREE.Mesh(segGeo.walk, mats.walk);
+    const walkL = new THREE.Mesh(segGeo.walk, mats.walk.clone());
     walkL.position.set(-7.4, 0.08, 0);
     walkL.receiveShadow = true;
     const walkR = walkL.clone();
     walkR.position.x = 7.4;
-    const scenery = new THREE.Mesh(sceneryGeometry(lcg(1000 + i * 77)), voxelMat);
+    const scenery = new THREE.Mesh(areaScenery('civic', i % 3), voxelMat);
+    g.userData = { grass, walk: walkL, scenery, sceneryKey: null };
     g.add(grass, road, walkL, walkR, scenery);
     scene.add(g);
     segments.push(g);
@@ -466,10 +476,22 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
   /** Draws `run` (any phase). `dt`: real seconds since the last frame; `moving`: the run is playing. */
   function draw(run, now, dt, moving, ghost = null) {
     setRole(run.role);
+    const area = campusAt(run.distance);
+    scene.fog.color.lerp(fogTarget.setHex(area.fog), dt ? Math.min(1, dt * 2) : 1);
     // Road segments wrap: each is placed by the distance run, so they keep pace with the sim.
     const off = run.distance % SEG_LEN;
     segments.forEach((g, i) => {
       g.position.z = SEG_LEN - i * SEG_LEN + off;
+      const worldIndex = Math.floor(run.distance / SEG_LEN) + i - 1;
+      const stretch = campusAt(worldIndex * SEG_LEN);
+      const variant = ((worldIndex % 3) + 3) % 3;
+      const key = `${stretch.id}:${variant}`;
+      if (g.userData.sceneryKey !== key) {
+        g.userData.scenery.geometry = areaScenery(stretch.id, variant);
+        g.userData.sceneryKey = key;
+        g.userData.grass.material.color.setHex(stretch.grass);
+        g.userData.walk.material.color.setHex(stretch.walk);
+      }
     });
     syncObstacles(run, now);
     syncItems(run, now);
