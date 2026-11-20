@@ -80,14 +80,21 @@ export const STEP = 1 / 60;
 
 /** The UiTM Shah Alam landmarks, passed in this order and then again from the second. */
 export const LANDMARKS = [
-  { name: 'Pintu Gerbang Utama UiTM', short: 'Pintu Gerbang', type: 'gate' },
-  { name: 'Kolej Perindu & Seroja', short: 'Kolej Perindu', type: 'kolej' },
-  { name: 'Menara SAAS (Canseleri)', short: 'Menara SAAS', type: 'saas' },
-  { name: 'Masjid Tuanku Mizan', short: 'Masjid', type: 'masjid' },
+  { name: 'Pintu Utama UiTM', short: 'Pintu Utama', type: 'gate' },
+  { name: 'Bangunan Canselori', short: 'Canselori', type: 'canselori' },
+  { name: 'Kolej Seroja', short: 'Kolej Seroja', type: 'seroja' },
+  { name: 'Menara SAAS', short: 'Menara SAAS', type: 'saas' },
   { name: 'Perpustakaan Tun Abdul Razak', short: 'PTAR', type: 'ptar' },
+  { name: 'Kolej Perindu', short: 'Kolej Perindu', type: 'kolej' },
+  { name: 'Masjid Tuanku Mizan', short: 'Masjid', type: 'masjid' },
   { name: 'Dewan Agung Tuanku Canselor', short: 'DATC', type: 'datc' },
-  { name: 'Fakulti Sains Komputer & Matematik', short: 'FSKM', type: 'fakulti' },
+  { name: 'Pusat Sukan UiTM', short: 'Pusat Sukan', type: 'sukan' },
+  { name: 'Pusat Kesihatan UiTM', short: 'Pusat Kesihatan', type: 'kesihatan' },
   { name: 'Kompleks Kejuruteraan', short: 'Kejuruteraan', type: 'engineering' },
+  { name: 'Fakulti Sains Komputer & Matematik', short: 'FSKM', type: 'fakulti' },
+  { name: 'Dataran Cendekia', short: 'Dataran Cendekia', type: 'cendekia' },
+  { name: 'Stadium UiTM', short: 'Stadium', type: 'stadium' },
+  { name: 'Kolej Mawar', short: 'Kolej Mawar', type: 'mawar' },
 ];
 
 /** The four characters, from the Arked profile's user type. Items differ in look and name only. */

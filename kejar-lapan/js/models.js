@@ -806,6 +806,96 @@ const GLASS = 0x1e3a8a;
 
 /** Each landmark beside the road: its boxes, its sign and which side (−1 left, 1 right). */
 const LANDMARK_BUILD = {
+  canselori: () => ({
+    side: 1,
+    boxes: [
+      [19, 10, 22, 23, 5, 0, W],
+      [20, 1.4, 23, 23, 10.7, 0, PURPLE],
+      [8, 4, 12, 23, 13.4, 0, GLASS],
+      ...[-8, -4, 0, 4, 8].map((z) => [0.8, 8, 0.8, 13, 4, z, CREAM]),
+      [3, 0.8, 24, 12, 0.4, 0, 0x94a3b8],
+    ],
+    sign: { text: 'BANGUNAN CANSELORI', w: 14, h: 1.8, pos: [12.5, 9, 0], rotY: -Math.PI / 2 },
+  }),
+  seroja: () => ({
+    side: 1,
+    boxes: [
+      ...[-7, 7].flatMap((z) => [
+        [14, 16, 10, 21, 8, z, 0xfce7f3],
+        [15, 1.4, 11, 21, 16.7, z, 0x9d174d],
+        ...[3, 7, 11].map((y) => [0.3, 1.8, 8, 13.9, y, z, GLASS]),
+      ]),
+      [8, 5, 5, 21, 2.5, 0, CREAM],
+    ],
+    sign: { text: 'KOLEJ SEROJA', w: 13, h: 1.7, pos: [13.7, 14, 0], rotY: -Math.PI / 2 },
+  }),
+  sukan: () => ({
+    side: -1,
+    boxes: [
+      [20, 8, 25, -24, 4, 0, CREAM],
+      [22, 1.5, 27, -24, 8.75, 0, 0x2563eb],
+      [16, 1.5, 23, -24, 10.25, 0, 0x2563eb],
+      ...[-8, -4, 0, 4, 8].map((z) => [0.3, 4.5, 2.8, -13.9, 4, z, GLASS]),
+      [9, 0.2, 22, -18, 0.1, 27, 0x3b82f6],
+      [0.15, 0.05, 20, -18, 0.23, 27, W],
+    ],
+    sign: { text: 'PUSAT SUKAN UiTM', w: 14, h: 1.8, pos: [-13.7, 7, 0], rotY: Math.PI / 2 },
+  }),
+  kesihatan: () => ({
+    side: 1,
+    boxes: [
+      [18, 8, 22, 23, 4, 0, W],
+      [19, 1.2, 23, 23, 8.6, 0, 0x0d9488],
+      [5, 3, 8, 16, 9, 0, W],
+      [0.3, 2.2, 0.7, 13.3, 9, 0, 0xdc2626],
+      [0.3, 0.7, 2.2, 13.3, 9, 0, 0xdc2626],
+      ...[-7, -3.5, 3.5, 7].map((z) => [0.3, 3, 2.2, 13.9, 4, z, GLASS]),
+      [2.5, 3.5, 3, 13, 1.75, 0, GLASS],
+    ],
+    sign: { text: 'PUSAT KESIHATAN UiTM', w: 14, h: 1.7, pos: [13.6, 6.7, 0], rotY: -Math.PI / 2 },
+  }),
+  cendekia: () => ({
+    side: -1,
+    boxes: [
+      [22, 0.4, 28, -25, 0.2, 0, 0xd6d3d1],
+      [10, 0.6, 10, -25, 0.7, 0, PURPLE],
+      [6, 0.8, 6, -25, 1.4, 0, W],
+      [2, 7, 2, -25, 5.3, 0, GOLD],
+      [7, 1, 7, -25, 9.3, 0, GOLD],
+      ...[-10, 10].flatMap((z) => [
+        [0.3, 11, 0.3, -16, 5.5, z, 0x94a3b8],
+        [0.15, 2.5, 4, -16, 9, z + 2, PURPLE],
+        [2, 0.6, 5, -32, 0.7, z, CREAM],
+      ]),
+    ],
+    sign: { text: 'DATARAN CENDEKIA', w: 14, h: 1.8, pos: [-13.8, 3, 0], rotY: Math.PI / 2 },
+  }),
+  stadium: () => ({
+    side: 1,
+    boxes: [
+      [25, 0.3, 42, 28, 0.15, 0, 0xb45309],
+      [17, 0.1, 32, 28, 0.35, 0, 0x16a34a],
+      ...[0, 1, 2, 3].map((tier) => [3, 2, 38, 15 + tier * 2, 1 + tier * 2, 0, tier % 2 ? GOLD : PURPLE]),
+      [12, 1, 42, 18, 10, 0, 0x94a3b8],
+      ...[-18, 18].flatMap((z) => [
+        [0.5, 20, 0.5, 37, 10, z, 0x94a3b8],
+        [2, 3, 4, 37, 20, z, W],
+      ]),
+    ],
+    sign: { text: 'STADIUM UiTM', w: 15, h: 1.8, pos: [13.3, 8.5, 0], rotY: -Math.PI / 2 },
+  }),
+  mawar: () => ({
+    side: -1,
+    boxes: [
+      ...[-9, 9].flatMap((z) => [
+        [15, 19, 12, -22, 9.5, z, 0xffedd5],
+        [16, 1.4, 13, -22, 19.7, z, 0xbe123c],
+        ...[3, 7, 11, 15].map((y) => [0.3, 1.8, 10, -14.4, y, z, GLASS]),
+      ]),
+      [12, 3, 6, -22, 8, 0, CREAM],
+    ],
+    sign: { text: 'KOLEJ MAWAR', w: 13, h: 1.7, pos: [-14.2, 17.5, 0], rotY: Math.PI / 2 },
+  }),
   gate: () => ({
     side: 0,
     boxes: [
@@ -815,7 +905,7 @@ const LANDMARK_BUILD = {
       [2.1, 1.1, 2.3, 7.2, 9.2, 0, GOLD],
       [16.2, 2.0, 1.8, 0, 8.3, 0, PURPLE],
     ],
-    sign: { text: 'SELAMAT DATANG KE UiTM SHAH ALAM', w: 13.8, h: 1.65, pos: [0, 8.3, 0.92], rotY: 0 },
+    sign: { text: 'PINTU UTAMA UiTM', w: 13.8, h: 1.65, pos: [0, 8.3, 0.92], rotY: 0 },
   }),
   kolej: () => ({
     side: -1,
@@ -824,7 +914,7 @@ const LANDMARK_BUILD = {
       [16, 1.6, 21, -20, 13.6, 0, PURPLE],
       ...[2, 5.5, 9].flatMap((y) => [[0.3, 1.6, 16, -12.4, y + 1.5, 0, GLASS]]),
     ],
-    sign: { text: 'KOLEJ PERINDU & SEROJA', w: 13, h: 1.7, pos: [-12.3, 11.2, 0], rotY: Math.PI / 2 },
+    sign: { text: 'KOLEJ PERINDU', w: 13, h: 1.7, pos: [-12.3, 11.2, 0], rotY: Math.PI / 2 },
   }),
   saas: () => ({
     side: -1,

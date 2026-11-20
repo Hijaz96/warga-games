@@ -18,6 +18,12 @@ test('daily course is shared across roles and changes at midnight Malaysia time'
   assert.notEqual(a.key, b.key);
 });
 
+test('role destinations remain at their intended buildings when landmarks are reordered', () => {
+  for (const [role, type] of Object.entries({ pelajar: 'fakulti', staf: 'saas', alumni: 'datc', awam: 'ptar' })) {
+    assert.equal(runPlan('destination', role).destination.type, type, role);
+  }
+});
+
 test('each destination and the daily route can be finished with the real clock', () => {
   for (const mode of ['destination', 'daily']) {
     for (const role of ['pelajar', 'staf', 'alumni', 'awam']) {
