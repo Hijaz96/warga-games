@@ -52,15 +52,18 @@ const store = {
 let cosmeticsCheat = false;
 const rotationCode = createRotationCode();
 
-const settings = () => ({ sound: true, pad: true, ghost: true, mode: 'destination', role: null, ...store.get(K.settings, {}) });
+const settings = () => {
+  const saved = store.get(K.settings, {});
+  return { sound: true, pad: true, ghost: true, role: null, ...saved, mode: saved?.mode === 'endless' ? 'endless' : 'daily' };
+};
 const saveSettings = (patch) => store.set(K.settings, { ...settings(), ...patch });
 const stats = () => ({ played: 0, best: 0, bestDistance: 0, ...store.get(K.stats, {}) });
 
-// Only one daily replay and one per destination role: storage stays bounded.
-const replaySlot = (plan, role) => plan.mode === 'daily' ? 'kl.replay.daily' : `kl.replay.destination.${role}`;
+// Keep the latest daily replay independently for each role.
+const replaySlot = (role) => `kl.replay.daily.${role}`;
 function loadReplay(plan, role) {
   if (!plan.key) return null;
-  const replay = store.get(replaySlot(plan, role));
+  const replay = store.get(replaySlot(role));
   return validReplay(replay, plan) ? replay : null;
 }
 
@@ -183,7 +186,7 @@ function renderMode() {
     h('strong', 'mode-destination', plan.destination?.short ?? 'Lari sejauh mungkin'),
     facts,
     h('p', 'mode-note', plan.mode === 'daily'
-      ? 'Laluan sama untuk semua pemain.'
+      ? 'Destinasi berbeza mengikut watak, bertukar setiap hari.'
       : plan.key ? 'Sampai tepat masa untuk menang.' : 'Elak halangan dan kumpul markah tertinggi.'),
   );
   const replay = loadReplay(plan, role);
@@ -192,7 +195,7 @@ function renderMode() {
     : plan.key ? 'Belum ada rekod laluan pada peranti ini.' : '';
   $('#set-ghost').disabled = !plan.key;
   $('#set-ghost').setAttribute('aria-checked', String(settings().ghost && !!plan.key));
-  $('#set-ghost-hint').textContent = !plan.key ? 'Tersedia dalam Tepat Masa dan Harian'
+  $('#set-ghost-hint').textContent = !plan.key ? 'Tersedia dalam Harian'
     : replay ? 'Ulang larian terbaik pada peranti ini' : 'Larian pertama akan disimpan sebagai bayang';
 }
 
@@ -637,7 +640,7 @@ function finish() {
   if (g.recording && run.t <= MAX_REPLAY_TICKS / 60 && !debugBot) {
     if (betterRun(run, g.previous?.result)) {
       g.recording.result = { status: run.status, distance: run.distance, score: run.score, t: run.t };
-      const saved = store.set(replaySlot(g.plan, run.role), g.recording);
+      const saved = store.set(replaySlot(run.role), g.recording);
       replayMessage = saved ? 'Rekod laluan baharu! Bayang disimpan untuk cubaan seterusnya.' : 'Bayang tidak dapat disimpan pada peranti ini.';
     } else replayMessage = 'Bayang rekod terbaik anda dikekalkan. Cuba lagi!';
   }
@@ -660,19 +663,26 @@ function finish() {
     submit: { status: run.score > 0 ? 'pending' : 'skipped' },
   };
   if (lastResult.submit.status === 'pending') submitResult(lastResult);
-  // Let the crash shake and particles play out over the frozen scene.
-  const settle = (t0) => {
-    const tick = (now) => {
-      if (game !== g) return;
-      const dt = Math.min((now - (g.last || now)) / 1000, 0.05);
-      g.last = now;
-      view.draw(run, now, dt, false, g.ghost?.run);
-      if (now - t0 < 1100) requestAnimationFrame(tick);
-      else go('tamat', true);
-    };
-    requestAnimationFrame(tick);
+  // Give successful arrivals a visible pause at the finish before showing results.
+  // Count from the first final-scene frame; loading stalls and background time don't skip it.
+  const holdMs = 1100;
+  let shownMs = 0;
+  g.last = 0;
+  const tick = (now) => {
+    if (game !== g) return;
+    if (document.hidden) {
+      g.last = 0;
+      rafId = requestAnimationFrame(tick);
+      return;
+    }
+    const elapsed = g.last ? Math.min(Math.max(0, now - g.last), 100) : 0;
+    g.last = now;
+    view.draw(run, now, elapsed / 1000, false, g.ghost?.run);
+    shownMs += elapsed;
+    if (shownMs < holdMs) rafId = requestAnimationFrame(tick);
+    else go('tamat', true);
   };
-  settle(performance.now());
+  rafId = requestAnimationFrame(tick);
 }
 
 // ---------- result ----------
@@ -861,7 +871,17 @@ async function loadTab(tab) {
 
 // ---------- wiring ----------
 
+// Ghost slots from the retired single-daily and Tepat Masa layouts can never load again.
+function dropLegacyReplays() {
+  try {
+    for (const key of ['kl.replay.daily', ...Object.keys(ROLES).map(role => `kl.replay.destination.${role}`)]) {
+      localStorage.removeItem(key);
+    }
+  } catch { /* storage unavailable */ }
+}
+
 function init() {
+  dropLegacyReplays();
   initTouchButtons();
   initFromArked();
   initAppsWarga();
@@ -976,7 +996,11 @@ function init() {
 
   // Pause when the player looks away: the page is hidden, or AppsWarga goes to the background.
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { pause(); rotationCode.reset(); }
+    if (document.hidden) {
+      pause();
+      if (game?.phase === 'over') game.last = 0;
+      rotationCode.reset();
+    }
     updatePreview();
   });
   window.addEventListener('appswargaDeactivated', pause);

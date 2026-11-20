@@ -80,7 +80,9 @@ The hub keeps its own copies of `appswarga.js`, `select.js`, `profile-options.js
   room reverb and softens high frequencies on music and sound effects; both effects
   clear when the corresponding power-up ends, and reset on pause or mute.
   Regenerate the MP3s and catalog with `python3 tools/compose-kejar-music.py`
-  (requires NumPy and FFmpeg; no build step is needed to play the game).
+  (requires NumPy and FFmpeg; no build step is needed to play the game). Tracks are 72 kbps
+  MP3s (about 0.7 MB each), and only the current area's track is loaded. The shield room
+  reverb is only connected while the shield is active.
 
 - HUD, touch controls and overlays respect both browser safe areas and AppsWarga's native
   inset variables, including the legacy `--appswarga-safe-top`. This keeps the timer below
@@ -89,24 +91,27 @@ The hub keeps its own copies of `appswarga.js`, `select.js`, `profile-options.js
 
 - A three-lane voxel runner through UiTM Shah Alam (Three.js 0.170.0, vendored in
   `kejar-lapan/vendor/` with its licence; no CDN, no build step).
-- The campus clock runs from 07:55 to 8:00. Each landmark (Kolej Perindu, Menara SAAS, Masjid,
-  PTAR, DATC, FSKM, Kejuruteraan, round and round) is a checkpoint that adds time: +16 s, one
+- The campus clock runs from 07:55 to 8:00. After the starting gate, the fourteen campus
+  landmarks repeat as checkpoints that add time: +16 s, one
   less each time, at least +8 s. Crash or reach 8:00 and the run ends.
-- **Tepat Masa** (default): a repeatable route to the role's destination: Pelajar → FSKM
-  (2.4 km), Staf → Menara SAAS (640 m), Alumni → DATC (1.9 km), Awam → PTAR (1.44 km).
-  Arrive before 8:00 to win. The finish awards checkpoint points but no extra clock time.
-- **Cabaran Harian**: everyone runs the same seeded 1.9 km route to DATC, regardless of role.
-  A new route starts at midnight Malaysia time. **Tanpa Henti** keeps the random endless run.
+- **Harian** (default): Pelajar, Staf, Alumni and Awam each receive a different daily
+  checkpoint destination. Each day picks four neighbouring checkpoints from PTAR onwards
+  (1.44–7.84 km) and shuffles them between the roles, so the longest route that day is at most
+  about twice the shortest while route length still varies from day to day. Destinations and seeded courses stay fixed for that user type all day and refresh at
+  midnight Malaysia time. Arrive before 8:00 to win; the finish awards checkpoint points
+  but no extra clock time. Saved Tepat Masa selections now open Harian.
+- **Larian Jauh**: run as far as possible on a random course before crashing or running
+  out of time; there is no fixed destination or distance cap.
 - **Bayang rekod**: optional translucent replay of the best attempt on the same route, stored
   locally on this device. Completed runs rank by fastest finish, then score; unfinished runs
   rank by furthest distance, then score. Sparse inputs replay at fixed simulation ticks; pauses
   do not advance the ghost, which cannot collide with the player or take their items. Only the
-  latest daily record and one record per destination role are retained. Course identities are
+  latest daily record for each user type is retained separately. Course identities are
   versioned in `js/modes.js`; bump `COURSE_VERSION` after physics, tuning or generation changes.
   The existing leaderboards continue to aggregate scores from all modes.
 - **Almari Gaya**: eighteen local milestone rewards across backpacks, outfits, running trails,
-  and accessories. Single-run distance goals are 10 km (robe), 5 km (glasses) and 12 km (stars),
-  verified against actual simulated runs. Game-count rewards require 100/150/300/500 completed games; arrival rewards require 100/250 successful arrivals. Earn rewards through completed games, best single-run distance, cumulative distance, active
+  and accessories. Single-run distance goals are 12 km (robe), 5 km (glasses) and 10 km (stars),
+  verified against actual simulated runs. Game-count rewards require 100/150/300/500 completed games; arrival rewards require 50/100 successful arrivals. Earn rewards through completed games, best single-run distance, cumulative distance, active
   play time (60/120/240 minutes), checkpoints, successful arrivals and collected items;
   existing run counts and distance records count too. Equip one unlocked item per body position (head, face, body, back, hand, foot effects),
   or keep the original look. All roles and modes share progress on this device; selections

@@ -17,7 +17,7 @@ export function resultCardContent(result) {
     campus: profileCampus(result.profile),
     mode: `${MODE_LABELS[result.plan.mode]}${result.plan.day ? ` · ${formatDate(result.plan.day)}` : ''}`,
     title: result.reason === 'arrived' ? 'SAMPAI TEPAT MASA!' : result.reason === 'crash' ? 'TERLANGGAR!' : 'DAH PUKUL 8:00!',
-    destination: result.plan.destination?.short ?? 'Tanpa Henti',
+    destination: result.plan.destination?.short ?? 'Larian Jauh',
     score: formatPoints(result.score),
     distance: formatDistance(result.distance),
     time: formatTime(result.seconds),

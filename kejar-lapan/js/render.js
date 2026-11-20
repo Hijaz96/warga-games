@@ -496,7 +496,7 @@ export function createView(canvas, { reducedMotion = () => false } = {}) {
     syncObstacles(run, now);
     syncItems(run, now);
     syncLandmarks(run);
-    animatePlayer(run, moving ? now : now * 0.25);
+    animatePlayer(run, run.status === 'arrived' ? run.t * 1000 : moving ? now : now * 0.25);
     syncGhost(run, ghost, ghost ? ghost.t * 1000 : now);
     trailEffect.draw(run, cosmetics.trail, moving, reducedMotion());
     animateParticles(dt);

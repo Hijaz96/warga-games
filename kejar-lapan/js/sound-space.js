@@ -24,8 +24,26 @@ export function createSoundSpace(context) {
   room.buffer = impulse;
   input.connect(filter);
   filter.connect(dry).connect(context.destination);
-  filter.connect(room).connect(wet).connect(context.destination);
+  // The convolver only receives input while shielded, so it costs nothing the rest of the time.
+  room.connect(wet).connect(context.destination);
   let shielded = null;
+  let roomLive = false;
+  let roomTimer = null;
+
+  function routeRoom(enabled, immediate) {
+    clearTimeout(roomTimer);
+    roomTimer = null;
+    if (enabled) {
+      if (!roomLive) filter.connect(room);
+      roomLive = true;
+      return;
+    }
+    if (!roomLive) return;
+    const detach = () => { roomTimer = null; roomLive = false; filter.disconnect(room); };
+    // Let the wet gain fade and the 0.65 s tail ring out before detaching.
+    if (immediate) detach();
+    else roomTimer = setTimeout(detach, 1200);
+  }
 
   function setShield(active, immediate = false) {
     const enabled = !!active;
@@ -41,6 +59,7 @@ export function createSoundSpace(context) {
       if (immediate) param.setValueAtTime(value, now);
       else param.setTargetAtTime(value, now, 0.1);
     }
+    routeRoom(enabled, immediate);
   }
 
   setShield(false, true);

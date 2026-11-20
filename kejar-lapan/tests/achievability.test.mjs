@@ -24,7 +24,7 @@ test('all single-run distance rewards are reachable on unmodified endless course
 
 test('every item can be earned by real runs without cheats or changing physics', () => {
   let stats = progressionAfterRun({}, play({ seed: 19, role: 'pelajar' }));
-  const arrival = play({ ...runPlan('destination', 'staf'), role: 'staf' });
+  const arrival = play({ ...runPlan('daily', 'staf', new Date('2026-11-20T00:00:00Z')), role: 'staf' });
   assert.equal(arrival.status, 'arrived');
   // Players can repeat this actual destination route. Reuse its completed result to audit
   // cumulative goals rather than rerunning identical simulation ticks hundreds of times.

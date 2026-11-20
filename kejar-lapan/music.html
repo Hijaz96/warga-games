@@ -26,7 +26,7 @@
     const title=document.createElement('h2');title.textContent=track.title;
     const style=document.createElement('p');style.textContent=track.style;
     const pace=document.createElement('p');pace.className='pace';pace.textContent=`${track.bpm} BPM · ${track.meter} · ${track.key}`;
-    const audio=document.createElement('audio');audio.controls=true;audio.preload='none';audio.src=`./audio/music/${track.file}?v=2`;
+    const audio=document.createElement('audio');audio.controls=true;audio.preload='none';audio.src=`./audio/music/${track.file}?v=3`;
     audio.setAttribute('aria-label',track.title);
     audio.addEventListener('play',()=>{for(const other of document.querySelectorAll('audio'))if(other!==audio)other.pause()});
     card.append(area,title,style,pace,audio);document.querySelector('#tracks').append(card);

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRun, step } from '../js/sim.js';
 import { runPlan } from '../js/modes.js';
 import { createRecording, recordTick, createGhost, stepGhost, betterRun, validReplay, MAX_REPLAY_TICKS } from '../js/replay.js';
-import { botActions } from './bot.mjs';
+import { clockBotActions } from './bot.mjs';
 
 function recordedRun() {
   const plan = runPlan('daily', 'pelajar', new Date('2026-11-19T00:00:00Z'));
@@ -11,7 +11,7 @@ function recordedRun() {
   const recording = createRecording(run, plan);
   const states = [];
   while (run.status === 'running') {
-    const actions = botActions(run);
+    const actions = clockBotActions(run);
     recordTick(recording, actions);
     step(run, actions);
     states.push({ x: run.x, y: run.y, slideT: run.slideT, distance: run.distance, score: run.score,
@@ -50,6 +50,7 @@ test('ghost replay does not mutate the live course or collect its items', () => 
 test('old dates, incompatible courses and malformed local recordings are ignored', () => {
   const { plan, recording } = recordedRun();
   assert.equal(createGhost(recording, runPlan('daily', 'pelajar', new Date('2026-11-20T00:00:00Z'))), null);
+  assert.equal(createGhost(recording, runPlan('daily', 'staf', new Date('2026-11-19T00:00:00Z'))), null);
   for (const patch of [
     { key: 'old-version' }, { seed: -1 }, { finishAt: 1 }, { role: 'unknown' },
     { ticks: MAX_REPLAY_TICKS + 1 }, { ticks: 0 }, { result: null },

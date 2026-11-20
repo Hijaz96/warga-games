@@ -3,7 +3,7 @@ export const MUSIC_SECONDS = 90;
 export const BOOST_MUSIC_RATE = 1.35;
 export const MUSIC_TRACKS = Object.fromEntries([
   'civic', 'college', 'library', 'mosque', 'sports', 'health', 'engineering', 'faculty', 'plaza',
-].map(id => [id, new URL(`../audio/music/${id}.mp3?v=2`, import.meta.url).href]));
+].map(id => [id, new URL(`../audio/music/${id}.mp3?v=3`, import.meta.url).href]));
 
 export function createMusicPlayer(context, {
   createAudio = url => new Audio(url),

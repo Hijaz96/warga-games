@@ -301,7 +301,7 @@ def render(area, score):
             output.setframerate(SR)
             output.writeframes((mix * 32767).astype('<i2').tobytes())
         subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', str(wav),
-                        '-af', 'loudnorm=I=-19:TP=-2:LRA=7', '-c:a', 'libmp3lame', '-b:a', '112k',
+                        '-af', 'loudnorm=I=-19:TP=-2:LRA=7', '-c:a', 'libmp3lame', '-b:a', '72k',
                         '-ar', str(SR), '-metadata', f'title={title}', '-metadata', 'artist=Kejar Lapan',
                         '-metadata', f'comment=Original campus score; {bpm} BPM; {meter}/4; {bars} bars; {mood}',
                         str(OUTPUT / f'{area}.mp3')], check=True)
