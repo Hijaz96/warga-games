@@ -4,20 +4,31 @@ export function seededRandom(seed) {
   return () => { state ^= state << 13; state ^= state >>> 17; state ^= state << 5; return (state >>> 0) / 4294967296; };
 }
 
+// Also reports where each tile went (`moves`: from → to) and which cells hold a merge (`merged`),
+// so the page can slide tiles; the board and score are unchanged by that bookkeeping.
 export function moveBoard(board, direction) {
   const next = Array(16).fill(0);
+  const moves = [], merged = [];
   let score = 0;
   const index = (line, offset) => direction === 'left' ? line * 4 + offset : direction === 'right' ? line * 4 + 3 - offset : direction === 'up' ? offset * 4 + line : (3 - offset) * 4 + line;
   for (let line = 0; line < 4; line++) {
-    const values = Array.from({ length: 4 }, (_, offset) => board[index(line, offset)]).filter(Boolean);
-    const merged = [];
-    for (let i = 0; i < values.length; i++) {
-      if (values[i] === values[i + 1]) { const value = values[i] * 2; merged.push(value); score += value; i++; }
-      else merged.push(values[i]);
+    const tiles = [];
+    for (let offset = 0; offset < 4; offset++) { const at = index(line, offset); if (board[at]) tiles.push({ value: board[at], at }); }
+    let target = 0;
+    for (let i = 0; i < tiles.length; i++, target++) {
+      const to = index(line, target);
+      if (tiles[i].value === tiles[i + 1]?.value) {
+        const value = tiles[i].value * 2;
+        next[to] = value; score += value; merged.push(to);
+        moves.push({ from: tiles[i].at, to }, { from: tiles[i + 1].at, to });
+        i++;
+      } else {
+        next[to] = tiles[i].value;
+        moves.push({ from: tiles[i].at, to });
+      }
     }
-    for (let offset = 0; offset < 4; offset++) next[index(line, offset)] = merged[offset] ?? 0;
   }
-  return { board: next, score, changed: next.some((value, i) => value !== board[i]) };
+  return { board: next, score, changed: next.some((value, i) => value !== board[i]), moves, merged };
 }
 export const canMove = (board) => board.some((value, i) => value === 0 || (i % 4 < 3 && value === board[i + 1]) || (i < 12 && value === board[i + 4]));
 function spawn(board, random) {

@@ -83,3 +83,13 @@ test('memory penalises misses and a perfect first level is worth 450', () => {
   for (let value = 0; value < 4; value++) for (const i of perfect.deck.flatMap((card, j) => card === value ? [j] : [])) perfect.flip(i);
   assert.equal(perfect.score, 450);
 });
+
+test('2048 moves report where each tile slid and which cells merged', () => {
+  const result = moveBoard([2, 2, 0, 4, ...Array(12).fill(0)], 'left');
+  assert.deepEqual(result.board.slice(0, 4), [4, 4, 0, 0]);
+  assert.deepEqual(result.moves, [{ from: 0, to: 0 }, { from: 1, to: 0 }, { from: 3, to: 1 }]);
+  assert.deepEqual(result.merged, [0]);
+  const down = moveBoard([2, ...Array(11).fill(0), 2, 0, 0, 0], 'down');
+  assert.deepEqual(down.moves, [{ from: 12, to: 12 }, { from: 0, to: 12 }]);
+  assert.deepEqual(down.merged, [12]);
+});

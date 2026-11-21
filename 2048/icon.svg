@@ -5,8 +5,10 @@
   <rect x="33" y="12" width="19" height="19" rx="4" fill="#f6c54f"/>
   <rect x="12" y="33" width="19" height="19" rx="4" fill="#f6c54f"/>
   <rect x="33" y="33" width="19" height="19" rx="4" fill="#a855f7"/>
-  <text x="21.5" y="26.5" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="11" fill="#4a2380">2</text>
-  <text x="42.5" y="26.5" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="11" fill="#2b1a00">4</text>
-  <text x="21.5" y="47.5" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="11" fill="#2b1a00">8</text>
-  <text x="42.5" y="47" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="8" fill="#fff">2048</text>
+  <g text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="14">
+    <text x="21.5" y="26.8" fill="#4a2380">2</text>
+    <text x="42.5" y="26.8" fill="#2b1a00">0</text>
+    <text x="21.5" y="47.8" fill="#2b1a00">4</text>
+    <text x="42.5" y="47.8" fill="#fff">8</text>
+  </g>
 </svg>
