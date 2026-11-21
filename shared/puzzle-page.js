@@ -8,7 +8,8 @@ import * as lb from './leaderboard.js';
 import { hardReload } from './reload.js';
 
 const $ = (selector) => document.querySelector(selector);
-const gameId = location.pathname.split('/').filter(Boolean).at(-1);
+// Each page declares its game, so /2048/ and /2048/index.html both work.
+const gameId = document.documentElement.dataset.game;
 const games = {
   '2048': { name: '2048', icon: '2048', description: 'Gabungkan nombor hingga mencapai 2048.', help: 'Leret papan, gunakan kekunci anak panah, atau butang arah. Dua nombor yang sama bergabung. Capai 2048 dan teruskan jika mahu.', create: seed => new Game2048(seed) },
   'blok': { name: 'Teka Blok', icon: '▦', description: 'Susun kepingan dan lengkapkan baris atau lajur.', help: 'Pilih satu kepingan, kemudian ketik petak pada papan untuk meletakkannya. Lengkapkan baris atau lajur untuk markah tambahan. Permainan tamat apabila tiada kepingan yang boleh diletakkan.', create: seed => new BlockGame(seed) },
@@ -22,7 +23,7 @@ let selectedPiece = 0, settleTimer = 0, timer = 0, boardRequest = 0;
 const statsKey = `${gameId}.stats`;
 const progressKey = gameKey(gameId);
 const screens = ['home', 'game', 'result', 'board'];
-const symbols = ['◆', '●', '▲', '■', '✚', '✦', '☀', '☾', '♣', '♥', '♠', '⬟'];
+const symbols = ['◆', '●', '▲', '■', '✚', '✦', '☀', '☾', '♣', '♥', '♠', '★'];
 const number = value => Number(value).toLocaleString('ms-MY');
 
 function storeGet(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
@@ -34,8 +35,17 @@ function stats() { return storeGet(statsKey, { played: 0, best: 0 }); }
 function renderHome() { show('home'); const s = stats(); $('#st-best').textContent = number(s.best); $('#st-played').textContent = s.played; }
 function route() {
   const name = location.hash.replace(/^#\/?/, '');
-  if (name === 'main') return game ? show('game') : withProfile(startGame);
-  if (document.body.dataset.screen === 'game' && game && !game.over) stopClock();
+  if (name === 'main') {
+    if (game && !game.over) return show('game');
+    // Back from the result lands on #/main with a finished round: go home, not to a dead board.
+    if (game?.over) { game = null; history.replaceState(null, '', '#/'); return renderHome(); }
+    return withProfile(startGame);
+  }
+  if (document.body.dataset.screen === 'game' && game && !game.over) {
+    stopClock();
+    // Leaving a live round (quit button or browser Back) ends it, so earned points are recorded.
+    if (game.score > 0) return finish('manual');
+  }
   if (name === 'tamat' && lastResult) return renderResult();
   if (name === 'papan') return openBoard();
   game = null; renderHome();
@@ -144,7 +154,7 @@ function init() {
   $('#btn-finish').addEventListener('click', () => finish('manual')); $('#res-home').addEventListener('click', () => go('')); $('#res-again').addEventListener('click', () => { game = null; go('main'); }); $('#res-board').addEventListener('click', () => { boardTab = 'alltime'; go('papan'); });
   $('#btn-board-back').addEventListener('click', () => go('')); $('#btn-board-refresh').addEventListener('click', () => loadTab(boardTab)); for (const button of document.querySelectorAll('.tabs [data-tab]')) button.addEventListener('click', () => setTab(button.dataset.tab));
   document.addEventListener('keydown', event => { if (gameId !== '2048' || document.body.dataset.screen !== 'game' || document.querySelector('dialog[open]')) return; const dir = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }[event.key]; if (dir) { event.preventDefault(); move2048(dir); } });
-  let touch = null; $('#game-grid').addEventListener('pointerdown', event => { if (gameId === '2048') touch = { x: event.clientX, y: event.clientY }; }); $('#game-grid').addEventListener('pointerup', event => { if (!touch || gameId !== '2048') return; const dx = event.clientX - touch.x, dy = event.clientY - touch.y; touch = null; if (Math.max(Math.abs(dx), Math.abs(dy)) >= 24) move2048(Math.abs(dx) > Math.abs(dy) ? dx > 0 ? 'right' : 'left' : dy > 0 ? 'down' : 'up'); });
+  let touch = null; $('#game-grid').addEventListener('pointerdown', event => { if (gameId !== '2048') return; touch = { x: event.clientX, y: event.clientY }; try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* pointer already gone */ } }); $('#game-grid').addEventListener('pointercancel', () => { touch = null; }); $('#game-grid').addEventListener('pointerup', event => { if (!touch || gameId !== '2048') return; const dx = event.clientX - touch.x, dy = event.clientY - touch.y; touch = null; if (Math.max(Math.abs(dx), Math.abs(dy)) >= 24) move2048(Math.abs(dx) > Math.abs(dy) ? dx > 0 ? 'right' : 'left' : dy > 0 ? 'down' : 'up'); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) stopClock(); else if (activeClock()) lastTick = performance.now(); });
   window.addEventListener('hashchange', route); timer = setInterval(updateClock, 100); route(); requestAnimationFrame(notifyAppReady);
 }

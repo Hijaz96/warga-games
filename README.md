@@ -9,9 +9,9 @@ AppsWarga app (hub repo: `nullifye/arcade`). Static site on GitHub Pages, no bui
 | Ular (snake) | [`ular/`](ular/) | https://nullifye.github.io/warga-games/ular/ |
 | Duga Kata (5-letter word guess) | [`duga-kata/`](duga-kata/) | https://nullifye.github.io/warga-games/duga-kata/ |
 | Kejar Lapan (3D voxel runner) | [`kejar-lapan/`](kejar-lapan/) | https://nullifye.github.io/warga-games/kejar-lapan/ |
-| 2048 | [`2048/`](2048/) | Added in this branch |
-| Teka Blok | [`blok/`](blok/) | Added in this branch |
-| Memori | [`memori/`](memori/) | Added in this branch |
+| 2048 | [`2048/`](2048/) | https://nullifye.github.io/warga-games/2048/ |
+| Teka Blok | [`blok/`](blok/) | https://nullifye.github.io/warga-games/blok/ |
+| Memori | [`memori/`](memori/) | https://nullifye.github.io/warga-games/memori/ |
 
 The site root redirects to the hub.
 

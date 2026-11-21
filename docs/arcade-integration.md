@@ -6,12 +6,19 @@ These game pages work locally without the hub. Online leaderboard writes require
 
 ## Supabase registration
 
-Add these rows to the `insert into public.arked_games ... values` section of `supabase/arked.sql` in the hub repo, before its `on conflict` clause. The configured maximum is the existing database limit. Review the bounds with the hub maintainer before applying them to production.
+Add these rows to the `insert into public.arked_games ... values` section of `supabase/arked.sql` in the hub repo, before its `on conflict` clause. `arked_record` rejects a round above `max_points`, or above `max_points_per_sec` times its seconds, so the per-second limit is what stops a short fake round from posting the maximum. Each limit is derived from the rules, and `tests/puzzle-engines.test.mjs` checks the per-action bounds.
 
 ```sql
-  ('2048',   '2048',      100000, 10000),
-  ('blok',   'Teka Blok', 100000, 10000),
-  ('memori', 'Memori',    100000,  5000),
+  -- 2048: points come only from merges. Strong play averages under 30 points a move (a greedy
+  -- player stays under 15), so even 10 moves a second stays under 500 a second.
+  ('2048',   '2048',      100000, 500),
+  -- Teka Blok: full lines clear at once, so a placement can only complete lines through its own
+  -- cells. The T piece (3 columns, 2 rows) gives at most 4 + 5 × 10 = 54 points; about three
+  -- placements a second stays under 200.
+  ('blok',   'Teka Blok', 100000, 200),
+  -- Memori: a perfect level 1 is 450 points (4 pairs × 100 + 50). A lucky clear in under 1.5 s
+  -- rounds to 1 second, so allow 500 a second.
+  ('memori', 'Memori',    100000, 500),
 ```
 
 ## Hub catalogue
