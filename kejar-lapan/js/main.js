@@ -204,7 +204,7 @@ function renderSettings() {
   $('#set-sound').setAttribute('aria-checked', String(s.sound));
   $('#set-sound-hint').textContent = s.sound ? 'Muzik retro & kesan bunyi' : 'Senyap';
   $('#set-pad').setAttribute('aria-checked', String(s.pad));
-  $('#set-pad-hint').textContent = s.pad ? 'Butang arah di skrin' : 'Leret pada skrin sahaja';
+  $('#set-pad-hint').textContent = s.pad ? 'Butang arah di skrin' : 'Leret sahaja';
   setMuted(!s.sound);
 }
 
