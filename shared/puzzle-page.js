@@ -6,14 +6,26 @@ import { gameKey, readShared, writeShared } from './shared-store.js';
 import { todayKL } from './rng.js';
 import * as lb from './leaderboard.js';
 import { hardReload } from './reload.js';
+import { MEMORY_ICONS } from './memory-icons.js';
 
 const $ = (selector) => document.querySelector(selector);
 // Each page declares its game, so /2048/ and /2048/index.html both work.
 const gameId = document.documentElement.dataset.game;
 const games = {
-  '2048': { name: '2048', help: 'Leret papan, gunakan kekunci anak panah, atau butang arah. Dua nombor yang sama bergabung. Capai 2048 dan teruskan jika mahu.', create: seed => new Game2048(seed) },
+  '2048': { name: '2048', help: [
+    'Leret papan, tekan butang arah atau kekunci anak panah untuk menggerakkan semua nombor.',
+    'Dua nombor yang sama bertembung bergabung menjadi satu (2 + 2 = 4). Nilai gabungan ditambah ke markah.',
+    'Setiap gerakan menambah satu nombor baharu (2 atau 4) di petak kosong.',
+    'Capai 2048 untuk menang, kemudian terus bermain atau tekan ‹ untuk simpan markah.',
+    'Permainan tamat apabila papan penuh dan tiada gerakan lagi. Butang arah boleh disembunyikan di laman utama.',
+  ], create: seed => new Game2048(seed) },
   'blok': { name: 'Teka Blok', help: 'Pilih satu kepingan, kemudian ketik petak pada papan untuk meletakkannya. Lengkapkan baris atau lajur untuk markah tambahan. Permainan tamat apabila tiada kepingan yang boleh diletakkan.', create: seed => new BlockGame(seed) },
-  'memori': { name: 'Memori', help: 'Buka dua kad untuk mencari pasangan. Selesaikan semua pasangan untuk naik ke tahap seterusnya. Masa yang tersedia berubah mengikut tahap.', create: seed => new MemoryGame(seed) },
+  'memori': { name: 'Memori', help: [
+    'Buka dua kad untuk mencari pasangan. Selesaikan semua pasangan untuk naik tahap.',
+    'Tiada tahap akhir: permainan berterusan sehingga masa tamat.',
+    'Setiap tahap menambah satu pasangan, hingga tahap 9 (12 pasangan, 24 kad).',
+    'Selepas tahap 9, bilangan kad kekal tetapi masa berkurang 2 saat setiap 4 tahap, hingga sekurang-kurangnya 25 saat.',
+  ], create: seed => new MemoryGame(seed) },
 };
 const config = games[gameId];
 if (!config) throw new Error(`Unknown game: ${gameId}`);
@@ -28,7 +40,7 @@ const statsKey = `${gameId}.stats`;
 const settingsKey = `${gameId}.settings`;
 const progressKey = gameKey(gameId);
 const screens = ['home', 'game', 'result', 'board'];
-const symbols = ['◆', '●', '▲', '■', '✚', '✦', '☀', '☾', '♣', '♥', '♠', '★'];
+let memoryDeck = null, memoryCards = [], holdUntil = 0;
 const number = value => Number(value).toLocaleString('ms-MY');
 
 function storeGet(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
@@ -55,7 +67,7 @@ function route() {
   if (name === 'papan') return openBoard();
   game = null; renderHome();
 }
-function activeClock() { return document.body.dataset.screen === 'game' && !document.hidden && game && !game.over && !(gameId === '2048' && game.won && !game.continued); }
+function activeClock() { return document.body.dataset.screen === 'game' && !document.hidden && game && !game.over && performance.now() >= holdUntil && !(gameId === '2048' && game.won && !game.continued); }
 function stopClock() { if (lastTick) { playedMs += Math.max(0, performance.now() - lastTick); lastTick = 0; } }
 function updateClock() {
   if (!activeClock()) { stopClock(); return; }
@@ -80,6 +92,7 @@ function renderSettings() {
   $('#set-pad-hint').textContent = pad ? 'Butang arah di skrin' : 'Leret sahaja';
 }
 function startGame() {
+  holdUntil = 0;
   slide && (clearTimeout(slide.timer), slide = null);
   clearTimeout(settleTimer); stopClock();
   const seed = crypto.getRandomValues(new Uint32Array(1))[0];
@@ -92,11 +105,12 @@ function renderGame(fx = {}) {
   if (!game) return;
   // As in Ular: the score is the title, the game (and its progress) the subtitle.
   $('#game-score').textContent = `${number(game.score)} mata`;
-  const progress = gameId === 'blok' ? ` · ${number(game.lines)} garisan` : gameId === 'memori' ? ` · Tahap ${game.level}` : '';
-  $('#game-mode').textContent = `${config.name}${progress}`;
+  // Memori's subtitle is just its level; the others name the game (Teka Blok adds its lines).
+  $('#game-mode').textContent = gameId === 'memori' ? `Tahap ${game.level}` : gameId === 'blok' ? `${config.name} · ${number(game.lines)} garisan` : config.name;
   renderTimer();
   const controls = $('#game-controls'), grid = $('#game-grid');
-  controls.replaceChildren(); grid.replaceChildren();
+  // Memori keeps its cards between renders so they can flip; it deals a new set per level itself.
+  controls.replaceChildren(); if (gameId !== 'memori') grid.replaceChildren();
   grid.className = 'puzzle-grid';
   // With the D-pad, lay out like Ular: the board centred in the free space, the D-pad at the bottom.
   $('#screen-game').classList.toggle('with-dpad', gameId === '2048' && settings().pad);
@@ -159,8 +173,49 @@ function renderBlock(grid, controls) {
 }
 function renderMemory(grid) {
   grid.classList.add('memory'); if (game.deck.length > 16) grid.classList.add('wide'); grid.setAttribute('aria-label', 'Kad memori');
-  game.deck.forEach((value, i) => { const shown = game.matched[i] || game.revealed.includes(i); const b = h('button', `puzzle-cell${game.matched[i] ? ' matched' : ''}`, shown ? symbols[value] : '?'); b.type = 'button'; b.disabled = shown || game.revealed.length === 2; b.setAttribute('aria-label', `Kad ${i + 1}: ${shown ? symbols[value] : 'tertutup'}`); b.addEventListener('click', () => { if (!game.flip(i)) return; appsWargaHaptic('selection'); clearTimeout(settleTimer); if (game.revealed.length === 2) settleTimer = setTimeout(() => { if (game && document.body.dataset.screen === 'game') { game.settle(); renderGame(); } }, 850); renderGame(); }); grid.append(b); });
-  $('#game-status').textContent = `Tahap ${game.level} · Pasangan ${game.pairs}/${game.deck.length / 2}`;
+  if (memoryDeck !== game.deck) {
+    // A new level: deal fresh face-down cards. Later renders only turn them over, so the flip animates.
+    memoryDeck = game.deck;
+    memoryCards = game.deck.map((value, i) => {
+      const card = h('button', 'puzzle-cell card'); card.type = 'button';
+      const inner = h('span', 'card-inner');
+      const front = h('span', 'card-face card-front'); front.innerHTML = MEMORY_ICONS[value].svg;
+      inner.append(h('span', 'card-face card-back', '?'), front);
+      card.append(inner);
+      card.addEventListener('click', () => flipCard(i));
+      return card;
+    });
+    grid.replaceChildren(...memoryCards);
+  }
+  game.deck.forEach((value, i) => {
+    const shown = game.matched[i] || game.revealed.includes(i), card = memoryCards[i];
+    card.classList.toggle('flipped', shown); card.classList.toggle('matched', game.matched[i]);
+    // Face-down cards stay tappable even while a wrong pair is showing (a third tap closes it).
+    card.disabled = shown;
+    card.setAttribute('aria-label', `Kad ${i + 1}: ${shown ? MEMORY_ICONS[value].name : 'tertutup'}`);
+  });
+  $('#game-status').textContent = `Pasangan ${game.pairs}/${game.deck.length / 2}`;
+}
+function flipCard(i) {
+  if (!game || document.body.dataset.screen !== 'game' || performance.now() < holdUntil) return;
+  const level = game.level, card = memoryCards[i];
+  // A wrong pair is still face up: a third tap turns it back over at once and opens the new card.
+  if (game.revealed.length === 2 && !game.revealed.includes(i)) { clearTimeout(settleTimer); game.settle(); }
+  if (!game.flip(i)) return;
+  appsWargaHaptic('selection'); clearTimeout(settleTimer);
+  if (game.level !== level) {
+    // The last pair finished the level: show it face up for a moment (clock paused), then deal the next.
+    card.classList.add('flipped');
+    for (const c of memoryCards) { if (c.classList.contains('flipped')) c.classList.add('matched'); c.disabled = true; }
+    $('#game-status').textContent = `Tahap ${level} selesai!`;
+    $('#game-score').textContent = `${number(game.score)} mata`;
+    stopClock(); holdUntil = performance.now() + 900;
+    settleTimer = setTimeout(() => { if (game && document.body.dataset.screen === 'game') renderGame(); }, 900);
+    return;
+  }
+  // A miss stays face up long enough to remember, then both cards turn back.
+  if (game.revealed.length === 2) settleTimer = setTimeout(() => { if (game && document.body.dataset.screen === 'game') { game.settle(); renderGame(); } }, 850);
+  renderGame();
 }
 function finish(reason = 'manual') {
   if (!game || lastResult?.game === game) return;
@@ -206,7 +261,12 @@ async function loadTab(tab) {
   catch (error) { if (request === boardRequest) boardMessage(`Gagal memuatkan: ${error.message}`, () => loadTab(tab)); }
 }
 function init() {
-  $('#help-text').textContent = config.help;
+  // A list of rules shows as a numbered list, like the other games' help.
+  if (Array.isArray(config.help)) {
+    const list = h('ol', 'help-list');
+    for (const rule of config.help) list.append(h('li', null, rule));
+    $('#help-text').replaceWith(list);
+  } else $('#help-text').textContent = config.help;
   initFromArked(); initAppsWarga(); initProfile();
   const help = () => $('#dlg-help').showModal(); $('#btn-help').addEventListener('click', help); $('#help-close').addEventListener('click', () => $('#dlg-help').close());
   $('#set-pad')?.addEventListener('click', () => { storeSet(settingsKey, { ...settings(), pad: !settings().pad }); renderSettings(); appsWargaHaptic('selection'); });

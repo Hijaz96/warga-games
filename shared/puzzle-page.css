@@ -58,7 +58,7 @@ html.from-arked .profile-chip { margin-right: auto; }
 .puzzle-tray { display:flex; width:min(100%,400px); gap:10px; }.puzzle-piece { flex:1; height:72px; display:grid; place-items:center; }.puzzle-piece[aria-pressed='true'] { outline:3px solid var(--gold); }.piece-mini { position:relative; width:46px; height:46px; }.piece-mini i { position:absolute; width:13px; height:13px; border-radius:3px; background:var(--primary); }
 .puzzle-result { margin:auto 0; text-align:center; }.puzzle-result h2 { font-size:2rem; }.puzzle-result .score { color:var(--primary); font-size:3rem; font-weight:800; margin:10px 0; }.puzzle-result p { color:var(--muted); }
 .puzzle-result .puzzle-actions { margin:30px 0; }
-.puzzle-grid.memory { grid-template-columns:repeat(4,minmax(0,1fr)); }.puzzle-grid.memory.wide { grid-template-columns:repeat(6,minmax(0,1fr)); }.puzzle-grid.memory .puzzle-cell { aspect-ratio:.85; }.puzzle-grid.memory .puzzle-cell.matched { background:var(--ok); color:white; }
+.puzzle-grid.memory { grid-template-columns:repeat(4,minmax(0,1fr)); }.puzzle-grid.memory.wide { grid-template-columns:repeat(6,minmax(0,1fr)); }.puzzle-grid.memory .puzzle-cell { aspect-ratio:.85; }
 
 /* ---------- 2048 tiles ---------- */
 /* Slots are the faint board; tiles ride on a layer above, positioned by row/column so they can slide. */
@@ -85,4 +85,24 @@ html.from-arked .profile-chip { margin-right: auto; }
 @media (prefers-reduced-motion: reduce) {
   .puzzle-cell.tile { transition: none; }
   .puzzle-cell.tile.merged, .puzzle-cell.tile.spawned { animation: none; }
+}
+
+/* ---------- Memori cards ---------- */
+/* A two-sided card: the purple back faces up; flipping turns it over in 3D to the picture. */
+.puzzle-grid.memory .puzzle-cell.card,
+.puzzle-grid.memory .puzzle-cell.card.matched { padding: 0; border: 0; background: none; box-shadow: none; perspective: 700px; }
+.card-inner { position: relative; display: block; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 320ms ease; }
+.card.flipped .card-inner { transform: rotateY(180deg); }
+.card-face { position: absolute; inset: 0; display: grid; place-items: center; border-radius: 10px; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 3px 0 var(--line); }
+.card-back { background: var(--primary) radial-gradient(circle at 30% 25%, rgb(255 255 255 / 0.2), transparent 60%); color: var(--primary-ink); font-size: clamp(1.1rem, 6vw, 1.8rem); font-weight: 800; }
+/* Always a white face (dark mode too), so every picture's colours show the same everywhere. */
+.card-front { background: #fff; border: 1px solid var(--line); transform: rotateY(180deg); }
+.card-front svg { width: 72%; height: auto; }
+/* A found pair turns green and gives a small hop once it has turned over. */
+.card.matched .card-front { background: color-mix(in srgb, var(--ok) 22%, #fff); border-color: var(--ok); }
+.card.matched { animation: card-match 260ms 300ms ease-out; }
+@keyframes card-match { 50% { scale: 1.08; } }
+@media (prefers-reduced-motion: reduce) {
+  .card-inner { transition: none; }
+  .card.matched { animation: none; }
 }
