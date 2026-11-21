@@ -52,9 +52,9 @@ test('2048 ends when no tile can move, and a greedy player averages well under 5
   }
 });
 
-test('a block placement scores at most 54 points and a full board ends the game', () => {
+test('a five-line clear scores the cells, the lines and the multi-line bonus, and a full board ends the game', () => {
   // Full lines clear at once, so a placement can only complete lines through its own cells.
-  // The T piece spans 3 columns and 2 rows: 4 cells plus at most 5 cleared lines.
+  // The T piece spans 3 columns and 2 rows: 4 cells + 5 lines × 10 + 4 extra lines × 10 = 94.
   const tee = shapes.find(shape => shape.length === 4 && new Set(shape.map(([x]) => x)).size === 3);
   const game = new BlockGame(1);
   game.board.fill(0);
@@ -63,10 +63,49 @@ test('a block placement scores at most 54 points and a full board ends the game'
   game.tray = [tee, undefined, undefined];
   assert.equal(game.place(0, 0, 0), true);
   assert.equal(game.lines, 5);
-  assert.equal(game.score, 54);
+  assert.equal(game.score, 94);
   const full = new BlockGame(2);
   full.board.fill(1);
   assert.equal(full.canContinue(), false);
+  assert.equal(full.fitsAnywhere([[0, 0]]), false);
+});
+
+test('clearing on consecutive placements adds a streak bonus of 5 per earlier clear, up to 50', () => {
+  const game = new BlockGame(3);
+  const clearRow = () => {
+    game.board.fill(0);
+    game.board.splice(0, 7, ...Array(7).fill(1));
+    game.tray = [[[0, 0]], [[0, 0]], [[0, 0]]];
+    game.place(0, 0, 7);
+    return game.lastMove;
+  };
+  assert.deepEqual([clearRow(), clearRow(), clearRow()].map(m => [m.streak, m.points]), [[1, 11], [2, 16], [3, 21]]);
+  for (let i = 0; i < 12; i++) clearRow();
+  assert.equal(clearRow().points, 1 + 10 + 50);
+  game.board.fill(0); game.tray = [[[0, 0]], [[0, 0]], [[0, 0]]];
+  game.place(0, 4, 4);
+  assert.equal(game.streak, 0, 'a placement without a clear ends the streak');
+});
+
+test('a greedy block player averages well under 20 points a placement', () => {
+  for (let seed = 1; seed <= 12; seed++) {
+    const game = new BlockGame(seed);
+    while (!game.over && game.placements < 400) {
+      let pick = null, best = -1;
+      for (let p = 0; p < 3; p++) for (let i = 0; i < 64; i++) {
+        if (!game.fits(game.tray[p], Math.floor(i / 8), i % 8)) continue;
+        // Score this placement on a copy of the board (cells + full lines through it).
+        const board = game.board.slice(), cells = game.tray[p].map(([x, y]) => (Math.floor(i / 8) + y) * 8 + i % 8 + x);
+        for (const c of cells) board[c] = 1;
+        const lines = [0, 1, 2, 3, 4, 5, 6, 7].filter(r => board.slice(r * 8, r * 8 + 8).every(Boolean)).length
+          + [0, 1, 2, 3, 4, 5, 6, 7].filter(c => [0, 1, 2, 3, 4, 5, 6, 7].every(r => board[r * 8 + c])).length;
+        if (cells.length + lines * 20 > best) { best = cells.length + lines * 20; pick = [p, i]; }
+      }
+      if (!pick) break;
+      game.place(pick[0], Math.floor(pick[1] / 8), pick[1] % 8);
+    }
+    assert.ok(game.score / game.placements < 20, `seed ${seed}: ${game.score} in ${game.placements} placements`);
+  }
 });
 
 test('memory penalises misses and a perfect first level is worth 450', () => {
@@ -92,4 +131,17 @@ test('2048 moves report where each tile slid and which cells merged', () => {
   const down = moveBoard([2, ...Array(11).fill(0), 2, 0, 0, 0], 'down');
   assert.deepEqual(down.moves, [{ from: 12, to: 12 }, { from: 0, to: 12 }]);
   assert.deepEqual(down.merged, [12]);
+});
+
+test('a block placement reports the cells it placed and the lines it cleared', () => {
+  const game = new BlockGame(1);
+  game.board.fill(0);
+  game.board.splice(0, 7, ...Array(7).fill(1));
+  game.tray = [[[0, 0]], undefined, undefined];
+  game.place(0, 0, 7);
+  assert.deepEqual(game.lastMove.placed, [7]);
+  assert.deepEqual(game.lastMove.rows, [0]);
+  assert.deepEqual(game.lastMove.columns, []);
+  assert.deepEqual(game.lastMove.cleared, [0, 1, 2, 3, 4, 5, 6, 7]);
+  assert.equal(game.lastMove.points, 11);
 });

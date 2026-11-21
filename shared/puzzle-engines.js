@@ -57,19 +57,29 @@ export const shapes = [
   [[0, 0], [0, 1], [1, 1]], [[0, 0], [1, 0], [1, 1]], [[0, 0], [1, 0], [2, 0], [1, 1]],
 ];
 export class BlockGame {
-  constructor(seed) { this.random = seededRandom(seed); this.board = Array(64).fill(0); this.score = 0; this.lines = 0; this.over = false; this.placements = 0; this.refill(); }
+  constructor(seed) { this.random = seededRandom(seed); this.board = Array(64).fill(0); this.score = 0; this.lines = 0; this.streak = 0; this.over = false; this.placements = 0; this.refill(); }
   refill() { this.tray = Array.from({ length: 3 }, () => shapes[Math.floor(this.random() * shapes.length)].map(cell => [...cell])); }
   fits(shape, row, column) { return Boolean(shape?.length && Number.isInteger(row) && Number.isInteger(column) && shape.every(([x, y]) => row + y >= 0 && row + y < 8 && column + x >= 0 && column + x < 8 && !this.board[(row + y) * 8 + column + x])); }
-  canContinue() { return this.tray.some(shape => shape && Array.from({ length: 64 }, (_, i) => i).some(i => this.fits(shape, Math.floor(i / 8), i % 8))); }
+  fitsAnywhere(shape) { return Boolean(shape) && Array.from({ length: 64 }, (_, i) => i).some(i => this.fits(shape, Math.floor(i / 8), i % 8)); }
+  canContinue() { return this.tray.some(shape => this.fitsAnywhere(shape)); }
   place(piece, row, column) {
     const shape = this.tray[piece];
     if (this.over || !this.fits(shape, row, column)) return false;
-    for (const [x, y] of shape) this.board[(row + y) * 8 + column + x] = 1;
+    const placed = shape.map(([x, y]) => (row + y) * 8 + column + x);
+    for (const i of placed) this.board[i] = 1;
     this.score += shape.length; this.tray[piece] = undefined; this.placements++;
     const rows = Array.from({ length: 8 }, (_, r) => r).filter(r => this.board.slice(r * 8, r * 8 + 8).every(Boolean));
     const columns = Array.from({ length: 8 }, (_, c) => c).filter(c => Array.from({ length: 8 }, (_, r) => this.board[r * 8 + c]).every(Boolean));
-    this.lines += rows.length + columns.length; this.score += (rows.length + columns.length) * 10;
-    this.board = this.board.map((value, i) => rows.includes(Math.floor(i / 8)) || columns.includes(i % 8) ? 0 : value);
+    const lines = rows.length + columns.length;
+    // 10 a line, +10 for each extra line cleared at once, and a streak bonus for clearing on
+    // consecutive placements: +5 per earlier clear in the streak, at most +50.
+    const linePoints = lines * 10, multiBonus = Math.max(0, lines - 1) * 10, streakBonus = lines ? Math.min(50, this.streak * 5) : 0;
+    this.streak = lines ? this.streak + 1 : 0;
+    this.lines += lines; this.score += linePoints + multiBonus + streakBonus;
+    const cleared = this.board.flatMap((_, i) => rows.includes(Math.floor(i / 8)) || columns.includes(i % 8) ? [i] : []);
+    // What this placement did, so the page can animate it; the rules above don't depend on it.
+    this.lastMove = { placed, rows, columns, cleared, streak: this.streak, bonus: multiBonus + streakBonus, points: shape.length + linePoints + multiBonus + streakBonus };
+    for (const i of cleared) this.board[i] = 0;
     if (this.tray.every(item => !item)) this.refill();
     if (!this.canContinue() || this.placements >= 10000) this.over = true;
     return true;

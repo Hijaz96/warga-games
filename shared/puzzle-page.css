@@ -55,7 +55,7 @@ html.from-arked .profile-chip { margin-right: auto; }
 .screen-game.with-dpad .puzzle-grid { margin-bottom: auto; width: min(100%, 400px, calc(100dvh - 320px)); }
 /* Short phones: a smaller D-pad so the board keeps its room. */
 @media (max-height: 700px) { .dpad { grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(2, 48px); padding-bottom: 16px; } }
-.puzzle-tray { display:flex; width:min(100%,400px); gap:10px; }.puzzle-piece { flex:1; height:72px; display:grid; place-items:center; }.puzzle-piece[aria-pressed='true'] { outline:3px solid var(--gold); }.piece-mini { position:relative; width:46px; height:46px; }.piece-mini i { position:absolute; width:13px; height:13px; border-radius:3px; background:var(--primary); }
+.puzzle-tray { display:flex; width:min(100%,400px); gap:10px; }.puzzle-piece { flex:1 1 0; min-width:0; padding:0; height:72px; display:grid; place-items:center; }.puzzle-piece[aria-pressed='true'] { outline:3px solid var(--gold); }.piece-mini { position:relative; width:46px; height:46px; }.piece-mini i { position:absolute; width:13px; height:13px; border-radius:3px; background:var(--primary); }
 .puzzle-result { margin:auto 0; text-align:center; }.puzzle-result h2 { font-size:2rem; }.puzzle-result .score { color:var(--primary); font-size:3rem; font-weight:800; margin:10px 0; }.puzzle-result p { color:var(--muted); }
 .puzzle-result .puzzle-actions { margin:30px 0; }
 .puzzle-grid.memory { grid-template-columns:repeat(4,minmax(0,1fr)); }.puzzle-grid.memory.wide { grid-template-columns:repeat(6,minmax(0,1fr)); }.puzzle-grid.memory .puzzle-cell { aspect-ratio:.85; }
@@ -105,4 +105,36 @@ html.from-arked .profile-chip { margin-right: auto; }
 @media (prefers-reduced-motion: reduce) {
   .card-inner { transition: none; }
   .card.matched { animation: none; }
+}
+
+/* The controls area spans the stage, so the Teka Blok tray matches the board's width and its three
+   slots keep one fixed size whether they hold a piece or a used ✓. */
+#game-controls { align-self: stretch; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+/* ---------- Teka Blok effects ---------- */
+/* Placed blocks pop in; blocks in a full line flash gold, swell, then shrink away in a sweep. */
+.puzzle-grid.eight .puzzle-cell.placed { animation: block-place 180ms ease-out; }
+.puzzle-grid.eight .puzzle-cell.clearing { animation: line-clear 320ms ease-in var(--d, 0ms) forwards; }
+@keyframes block-place { from { scale: 0.6; } }
+@keyframes line-clear {
+  30% { scale: 1.12; background: var(--gold); border-color: var(--gold); }
+  to { scale: 0.2; opacity: 0; background: var(--gold); border-color: var(--gold); }
+}
+/* Preview where the piece would land: green fits, red doesn't; lines it would clear get a gold ring. */
+.puzzle-grid.eight .puzzle-cell.preview-ok { background: color-mix(in srgb, var(--primary) 45%, var(--surface)); border-color: var(--primary); }
+.puzzle-grid.eight .puzzle-cell.preview-bad { background: color-mix(in srgb, #e03131 35%, var(--surface)); border-color: #e03131; }
+.puzzle-grid.eight .puzzle-cell.preview-line { box-shadow: inset 0 0 0 2px var(--gold); }
+/* Pieces with no room anywhere on the board fade out. */
+.puzzle-piece.no-fit { opacity: 0.35; }
+.puzzle-piece { touch-action: none; user-select: none; -webkit-user-select: none; }
+/* The piece being dragged floats above the finger at board size. */
+.piece-mini.drag-ghost { position: fixed; left: 0; top: 0; z-index: 50; pointer-events: none; opacity: 0.9; filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.25)); }
+.piece-mini.drag-ghost i { border-radius: 5px; transition: background 0.1s; }
+.piece-mini.drag-ghost.bad i { background: #e03131; }
+/* No room left: the board shakes once and dims before the result. */
+.puzzle-grid.stuck { animation: board-stuck 420ms ease-in-out; }
+.puzzle-grid.stuck .puzzle-cell.filled { filter: grayscale(0.7); opacity: 0.6; transition: opacity 0.4s, filter 0.4s; }
+@keyframes board-stuck { 20%, 60% { translate: -6px 0; } 40%, 80% { translate: 6px 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .puzzle-grid.eight .puzzle-cell.placed, .puzzle-grid.eight .puzzle-cell.clearing, .puzzle-grid.stuck { animation: none; }
 }
