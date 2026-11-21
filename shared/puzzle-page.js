@@ -85,7 +85,7 @@ function stopClock() { if (lastTick) { playedMs += Math.max(0, performance.now()
 function updateClock() {
   if (!activeClock()) { stopClock(); return; }
   const now = performance.now();
-  if (lastTick) { const delta = Math.max(0, now - lastTick); playedMs += delta; if (gameId === 'memori') { game.timeLeft = Math.max(0, game.timeLeft - delta); if (game.timeLeft === 0) { finish('timeout'); return; } } }
+  if (lastTick) { const delta = Math.max(0, now - lastTick); playedMs += delta; if (gameId === 'memori') { const before = Math.ceil(game.timeLeft / 1000); game.timeLeft = Math.max(0, game.timeLeft - delta); if (game.timeLeft === 0) { playPuzzle('over'); finish('timeout'); return; } const left = Math.ceil(game.timeLeft / 1000); if (left < before && left <= 5) playPuzzle('tick'); } }
   lastTick = now;
   renderTimer();
 }
@@ -173,9 +173,14 @@ function endSlide() { if (!slide) return; const done = slide; slide = null; clea
 function move2048(direction) {
   if (gameId !== '2048' || document.body.dataset.screen !== 'game' || !game) return;
   endSlide(); // a quick second move first lands the previous one
-  const plan = moveBoard(game.board, direction);
+  unlockPuzzleSound();
+  const plan = moveBoard(game.board, direction), wasWon = game.won;
   if (!game.move(direction)) return;
   appsWargaHaptic('selection');
+  if (game.over) playPuzzle('over');
+  else if (game.won && !wasWon) playPuzzle('win');
+  else if (plan.merged.length) playPuzzle('merge', { value: Math.max(...plan.merged.map(i => plan.board[i])) });
+  else playPuzzle('slide');
   const fx = { merged: plan.merged, spawned: game.board.findIndex((value, i) => value && !plan.board[i]) };
   const current = game;
   const finishMove = () => { if (game !== current) return; renderGame(fx); if (game.over) finish('full'); };
@@ -355,8 +360,11 @@ function flipCard(i) {
   const level = game.level, card = memoryCards[i];
   // A wrong pair is still face up: a third tap turns it back over at once and opens the new card.
   if (game.revealed.length === 2 && !game.revealed.includes(i)) { clearTimeout(settleTimer); game.settle(); }
+  unlockPuzzleSound();
+  const pairs = game.pairs;
   if (!game.flip(i)) return;
   appsWargaHaptic('selection'); clearTimeout(settleTimer);
+  playPuzzle(game.level !== level ? 'level' : game.pairs > pairs ? 'match' : game.revealed.length === 2 ? 'mismatch' : 'flip');
   if (game.level !== level) {
     // The last pair finished the level: show it face up for a moment (clock paused), then deal the next.
     card.classList.add('flipped');
