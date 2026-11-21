@@ -52,7 +52,7 @@ The hub keeps its own copies of `appswarga.js`, `select.js`, `profile-options.js
 - 20×20 board; the snake speeds up from 140 ms to 75 ms a step as it eats.
 - **Dinding** on: hitting the edge ends the game, 15 points a food. Off: the snake wraps
   around, 10 points a food. Hitting itself always ends it.
-- **D-pad** on or off; swiping on the board and arrow keys / WASD always work.
+- **Butang arah** (on-screen D-pad) on or off; swiping on the board and arrow keys / WASD always work.
 - Pauses when the page is hidden or AppsWarga goes to the background.
 - Rules in `ular/js/snake.js` (unit-tested); every round with points goes to `arked_record`.
 

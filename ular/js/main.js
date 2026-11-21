@@ -101,7 +101,7 @@ function renderSettings() {
     ? `Langgar tepi, tamat · ${POINTS.walls} mata`
     : `Tembus ke sisi lain · ${POINTS.open} mata`;
   $('#set-dpad').setAttribute('aria-checked', String(s.dpad));
-  $('#set-dpad-hint').textContent = s.dpad ? 'Butang arah di skrin' : 'Leret pada papan sahaja';
+  $('#set-dpad-hint').textContent = s.dpad ? 'Butang arah di skrin' : 'Leret sahaja';
 }
 
 function toggleSetting(key) {
